@@ -3,6 +3,8 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
+_FASTMCP_IMPORT_ERROR: Optional[BaseException] = None
+
 try:
     from fastmcp.client import Client
     from fastmcp.client.client import CallToolResult
@@ -10,10 +12,16 @@ try:
     from fastmcp.exceptions import ToolError
     import mcp.types as mcp_types
     _FASTMCP_AVAILABLE = True
-except ImportError:  # pragma: no cover - handled at runtime
+except ImportError as exc:  # pragma: no cover - handled at runtime
     Client = CallToolResult = infer_transport = ToolError = None  # type: ignore
     mcp_types = None  # type: ignore
     _FASTMCP_AVAILABLE = False
+    _FASTMCP_IMPORT_ERROR = exc
+except Exception as exc:  # pragma: no cover - defensive
+    Client = CallToolResult = infer_transport = ToolError = None  # type: ignore
+    mcp_types = None  # type: ignore
+    _FASTMCP_AVAILABLE = False
+    _FASTMCP_IMPORT_ERROR = exc
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +34,13 @@ class SefariaMCPService:
         self.timeout = timeout
 
         if not _FASTMCP_AVAILABLE:
+            detail = ""
+            if _FASTMCP_IMPORT_ERROR:
+                detail = f" (import error: {_FASTMCP_IMPORT_ERROR})"
             raise RuntimeError(
                 "fastmcp and mcp packages are required for SefariaMCPService. "
                 "Install them or disable the Sefaria MCP integration."
+                f"{detail}"
             )
         self._transport = infer_transport(endpoint)
         self._client = Client(self._transport, timeout=timeout)
