@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any, AsyncGenerator
 from collections import defaultdict
 
 import redis.asyncio as redis
-from models.chat_models import Session
+from brain_service.models.chat_models import Session
 from domain.chat.tools import ToolRegistry
 from brain_service.models.db import UserApiKey
 from brain_service.services.user_service import UserService, ApiKeyLimitExceeded

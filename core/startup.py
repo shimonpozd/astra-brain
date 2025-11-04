@@ -25,7 +25,7 @@ from brain_service.services.navigation_service import NavigationService
 from domain.chat.tools import ToolRegistry
 from .rate_limiting import setup_rate_limiter
 from .database import create_engine, create_session_factory, shutdown_engine
-from models.db import Base
+from brain_service.models.db import Base
 from brain_service.services.user_service import UserService
 from brain_service.services.auth_service import AuthService
 from .config_loader import ensure_config_root

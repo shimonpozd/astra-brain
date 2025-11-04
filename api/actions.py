@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 
 from core.dependencies import get_http_client, get_lexicon_service, get_translation_service
-from models.actions_models import TranslateRequest, ExplainTermRequest
+from brain_service.models.actions_models import TranslateRequest, ExplainTermRequest
 
 # Assuming these functions will be moved to a service layer later
 from config.prompts import get_prompt

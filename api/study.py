@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
-from models.study_models import (
+from brain_service.models.study_models import (
     StudyBookshelfRequest, StudyResolveRequest, StudySetFocusRequest, 
     StudyStateResponse, StudyNavigateRequest, StudyWorkbenchSetRequest, 
     StudyChatSetFocusRequest, StudyChatRequest

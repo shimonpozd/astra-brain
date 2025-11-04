@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 # Imports from the new model location
-from models.admin_models import PersonalityFull, PersonalityPublic, PromptUpdateRequest
+from brain_service.models.admin_models import PersonalityFull, PersonalityPublic, PromptUpdateRequest
 from core.dependencies import require_admin_user
 
 # Imports from the existing config modules (assuming they are in PYTHONPATH)

@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional, AsyncGenerator, Mapping
 from collections import defaultdict
 
 import redis.asyncio as redis
-from models.study_models import (
+from brain_service.models.study_models import (
     StudyBookshelfRequest, StudyResolveRequest, StudySetFocusRequest, 
     StudyStateResponse, StudyNavigateRequest, StudyWorkbenchSetRequest, 
     StudyChatSetFocusRequest, StudyChatRequest
@@ -15,7 +15,7 @@ from .sefaria_service import SefariaService
 from .sefaria_index_service import SefariaIndexService
 from domain.chat.tools import ToolRegistry
 from core.llm_config import get_llm_for_task, LLMConfigError
-from models.doc_v1_models import DocV1
+from brain_service.models.doc_v1_models import DocV1
 from config.prompts import get_prompt
 from config import personalities as personality_service
 from .study.config_schema import StudyConfig, load_study_config
