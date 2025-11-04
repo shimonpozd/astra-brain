@@ -5,23 +5,7 @@
 **/env/
 **/venv39/ 
 
-audio/
-audioout/
-chatterbox/
-cosmos/
-exports/
-koyzah_2/
-voice-in_backup/
-stt_backup/
-Sefaria-Project/
-player/
-servises/ 
-setup/
-vibevoice/
-xtts-api/
-TR/
-config/
-authorized_key.json
+
 
 # --- Python caches
 **/__pycache__/
@@ -49,7 +33,6 @@ logs/
 # --- Данные/модели/тяжёлые артефакты
 data/
 datasets/
-models/
 checkpoints/
 **/*.onnx
 **/*.pt

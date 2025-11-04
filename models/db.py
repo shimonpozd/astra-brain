@@ -1,0 +1,135 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Base(DeclarativeBase):
+    """Declarative base for the brain service models."""
+
+
+class TimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class User(Base, TimestampMixin):
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(
+        Enum("admin", "member", name="user_role"),
+        nullable=False,
+        default="member",
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_manually: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    threads: Mapped[list["ChatThread"]] = relationship(
+        "ChatThread",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    api_keys: Mapped[list["UserApiKey"]] = relationship(
+        "UserApiKey",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class ChatThread(Base, TimestampMixin):
+    __tablename__ = "chat_threads"
+    __table_args__ = (
+        UniqueConstraint("session_id", name="uq_chat_threads_session_id"),
+        Index("ix_chat_threads_user_id", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    session_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=True)
+    last_modified: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        nullable=False,
+    )
+    metadata_json: Mapped[dict[str, object] | None] = mapped_column(
+        "metadata",
+        JSONB,
+        nullable=True,
+    )
+
+    user: Mapped["User"] = relationship("User", back_populates="threads")
+
+
+class UserApiKey(Base, TimestampMixin):
+    __tablename__ = "user_api_keys"
+    __table_args__ = (
+        Index("ix_user_api_keys_user_id", "user_id"),
+        Index("ix_user_api_keys_provider", "provider"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False, default="openrouter")
+    api_key_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    last_four: Mapped[str] = mapped_column(String(8), nullable=False)
+    daily_limit: Mapped[int | None] = mapped_column(nullable=True)
+    usage_today: Mapped[int] = mapped_column(default=0, nullable=False)
+    last_reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    user: Mapped["User"] = relationship("User", back_populates="api_keys")
