@@ -14,7 +14,7 @@ from .study_state import Bookshelf, BookshelfItem
 from .sefaria_index import get_book_structure
 from config import get_config_section
 
-import logging_utils
+from brain_service.utils import logging_utils
 
 logger = logging_utils.get_logger(__name__)
 
