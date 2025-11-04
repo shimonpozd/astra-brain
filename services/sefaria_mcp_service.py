@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -74,7 +75,25 @@ class SefariaMCPService:
     async def close(self) -> None:
         """Close underlying transport resources."""
         try:
-            await self._client.close()
+            closer = getattr(self._client, "close", None)
+            if callable(closer):
+                result = closer()
+                if inspect.isawaitable(result):
+                    await result
+                return
+
+            async_exit = getattr(self._client, "__aexit__", None)
+            if callable(async_exit):
+                result = async_exit(None, None, None)
+                if inspect.isawaitable(result):
+                    await result
+                return
+
+            transport_close = getattr(self._transport, "close", None)
+            if callable(transport_close):
+                result = transport_close()
+                if inspect.isawaitable(result):
+                    await result
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed to close Sefaria MCP client: %s", exc, exc_info=True)
 
