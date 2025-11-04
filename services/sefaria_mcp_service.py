@@ -56,7 +56,18 @@ class SefariaMCPService:
                 f"{detail}"
             )
         self._transport = infer_transport(endpoint)
-        self._client = Client(self._transport, timeout=timeout)
+        self._timeout_supported = True
+        try:
+            self._client = Client(self._transport, timeout=timeout)
+        except TypeError as exc:
+            if "unexpected keyword argument 'timeout'" not in str(exc):
+                raise
+            logger.debug(
+                "fastmcp Client timeout kwarg unsupported; falling back",
+                extra={"endpoint": endpoint},
+            )
+            self._client = Client(self._transport)
+            self._timeout_supported = False
         self._lock = asyncio.Lock()
         logger.info("Initialized SefariaMCPService", extra={"endpoint": endpoint})
 
