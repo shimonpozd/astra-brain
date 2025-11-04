@@ -5,9 +5,10 @@ from typing import Any, Dict, List, Optional
 
 _FASTMCP_IMPORT_ERROR: Optional[BaseException] = None
 
+from typing import TYPE_CHECKING
+
 try:
     from fastmcp.client import Client
-    from fastmcp.client.client import CallToolResult
     from fastmcp.client.transports import infer_transport
     from fastmcp.exceptions import ToolError
     import mcp.types as mcp_types
@@ -22,6 +23,18 @@ except Exception as exc:  # pragma: no cover - defensive
     mcp_types = None  # type: ignore
     _FASTMCP_AVAILABLE = False
     _FASTMCP_IMPORT_ERROR = exc
+else:
+    try:  # pragma: no cover - version compatibility
+        from fastmcp.client.client import CallToolResult as _FastMCPCallToolResult
+    except (ImportError, AttributeError):
+        try:
+            from mcp.types import CallToolResult as _FastMCPCallToolResult  # type: ignore
+        except (ImportError, AttributeError):
+            _FastMCPCallToolResult = Any  # type: ignore
+    CallToolResult = _FastMCPCallToolResult  # type: ignore[misc]
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from types import SimpleNamespace as CallToolResult  # type: ignore[misc]
 
 logger = logging.getLogger(__name__)
 
