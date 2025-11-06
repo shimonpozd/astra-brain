@@ -77,7 +77,7 @@ class User(Base, TimestampMixin):
 class ChatThread(Base, TimestampMixin):
     __tablename__ = "chat_threads"
     __table_args__ = (
-        UniqueConstraint("session_id", name="uq_chat_threads_session_id"),
+        UniqueConstraint("user_id", "session_id", name="uq_chat_threads_user_session"),
         Index("ix_chat_threads_user_id", "user_id"),
     )
 
