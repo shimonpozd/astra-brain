@@ -934,6 +934,140 @@ async def _handle_jerusalem_talmud_range(
         "he_ref": segments[0]["metadata"].get("heRef") if segments else None,
     }
 
+async def _handle_same_chapter_range(
+    ref: str,
+    start_info: Optional[Dict[str, Any]],
+    end_info: Optional[Dict[str, Any]],
+    sefaria_service: SefariaService,
+    session_id: str = None,
+    redis_client=None,
+) -> Optional[Dict[str, Any]]:
+    """Handle ranges that stay within the same chapter by loading verse-by-verse."""
+    if not start_info:
+        logger.warning("[daily] SAME-CHAPTER RANGE MISSING START INFO", extra={"ref": ref})
+        return None
+
+    book_name = (start_info.get("book") or (end_info or {}).get("book") or "").strip()
+    chapter = start_info.get("chapter")
+    start_verse = start_info.get("verse")
+    end_verse = (end_info or {}).get("verse")
+
+    if not book_name or chapter is None or start_verse is None:
+        logger.warning(
+            "[daily] SAME-CHAPTER RANGE INCOMPLETE",
+            extra={
+                "ref": ref,
+                "book": book_name,
+                "chapter": chapter,
+                "start_verse": start_verse,
+                "end_verse": end_verse,
+            },
+        )
+        return None
+
+    if end_verse is None:
+        end_verse = start_verse
+
+    if end_verse < start_verse:
+        start_verse, end_verse = end_verse, start_verse
+
+    logger.info(
+        "[daily] HANDLING SAME-CHAPTER RANGE",
+        extra={
+            "ref": ref,
+            "book": book_name,
+            "chapter": chapter,
+            "start_verse": start_verse,
+            "end_verse": end_verse,
+        },
+    )
+
+    segments: List[Dict[str, Any]] = []
+
+    for verse_num in range(start_verse, end_verse + 1):
+        verse_ref = f"{book_name} {chapter}:{verse_num}"
+        try:
+            verse_result = await sefaria_service.get_text(verse_ref)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.error(
+                "[daily] SAME-CHAPTER FETCH FAILED",
+                extra={"verse_ref": verse_ref, "error": str(exc)},
+            )
+            break
+
+        verse_data = verse_result.get("data") if verse_result.get("ok") else None
+        if not verse_data:
+            logger.warning(
+                "[daily] SAME-CHAPTER VERSE EMPTY",
+                extra={"verse_ref": verse_ref, "result_ok": verse_result.get("ok")},
+            )
+            continue
+
+        en_text_raw = verse_data.get("en_text", "") or verse_data.get("text", "")
+        he_text_raw = verse_data.get("he_text", "") or verse_data.get("he", "")
+
+        english_text = _clean_html_text(_extract_text_entry(en_text_raw, verse_num))
+        hebrew_text = _clean_html_text(_extract_hebrew_text(he_text_raw, verse_num))
+        display_text = hebrew_text or english_text
+
+        if not display_text:
+            logger.debug(
+                "[daily] SAME-CHAPTER VERSE NO CONTENT",
+                extra={"verse_ref": verse_ref},
+            )
+            continue
+
+        metadata = {
+            "title": verse_data.get("title", ref),
+            "indexTitle": verse_data.get("indexTitle", ""),
+            "heRef": verse_data.get("heRef", ""),
+            "chapter": chapter,
+            "verse": verse_num,
+            "enText": english_text,
+        }
+
+        segments.append(
+            {
+                "ref": verse_ref,
+                "text": display_text,
+                "heText": hebrew_text,
+                "enText": english_text,
+                "metadata": metadata,
+            }
+        )
+        logger.info(
+            "[daily] SAME-CHAPTER VERSE LOADED",
+            extra={"verse_ref": verse_ref},
+        )
+
+    if not segments:
+        logger.warning("[daily] SAME-CHAPTER RANGE PRODUCED NO SEGMENTS", extra={"ref": ref})
+        return None
+
+    total_segments = len(segments)
+    for idx, segment in enumerate(segments):
+        position = idx / (total_segments - 1) if total_segments > 1 else 0.5
+        segment["position"] = float(position)
+
+    if session_id and redis_client:
+        try:
+            count_key = f"daily:sess:{session_id}:total_segments"
+            await redis_client.set(count_key, total_segments, ex=3600 * 24 * 7)
+        except Exception as exc:  # pragma: no cover - best effort
+            logger.warning(
+                "[daily] SAME-CHAPTER REDIS TOTAL FAILED",
+                extra={"ref": ref, "session_id": session_id, "error": str(exc)},
+            )
+
+    return {
+        "segments": segments,
+        "focusIndex": 0,
+        "totalLength": total_segments,
+        "ref": ref,
+        "loadedAt": str(int(time.time() * 1000)),
+        "he_ref": segments[0]["metadata"].get("heRef") if segments else None,
+    }
+
 async def _handle_inter_chapter_range(ref: str, sefaria_service: SefariaService, session_id: str = None, redis_client = None) -> Optional[Dict[str, Any]]:
     """Handle inter-chapter ranges by loading each chapter separately."""
     logger.info(f"[daily] HANDLING INTER-CHAPTER RANGE: {ref}")

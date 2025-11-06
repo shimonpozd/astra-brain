@@ -64,7 +64,26 @@ class SefariaService:
             self.http_client, f"v3/texts/{quote(final_ref)}", 
             api_url=self.api_url, api_key=self.api_key, params=params
         )
+        used_v3_endpoint = True
         raw_result = await with_retries(api_call)
+
+        if isinstance(raw_result, dict) and raw_result.get("error"):
+            error_text = str(raw_result.get("error", "")).lower()
+            detail_text = str(raw_result.get("details", "")).lower()
+            if "404" in error_text or "not found" in detail_text:
+                logger.info(
+                    "Sefaria v3 endpoint unavailable, falling back to legacy /texts/ for %s",
+                    final_ref,
+                )
+                used_v3_endpoint = False
+                legacy_call = lambda: get_from_sefaria(
+                    self.http_client,
+                    f"texts/{quote(final_ref)}",
+                    api_url=self.api_url,
+                    api_key=self.api_key,
+                    params={"commentary": 0, "context": 0, "pad": 0},
+                )
+                raw_result = await with_retries(legacy_call)
 
         # 3. Process the final result
         if isinstance(raw_result, list) and len(raw_result) > 0:
@@ -81,20 +100,27 @@ class SefariaService:
             if he_text:
                 logger.info(f"SEFARIA_SERVICE: HE_TEXT PREVIEW: [Hebrew text - {len(he_text)} chars]")
             # Attempt to fetch segmented verses using v2 texts endpoint
-            try:
-                segment_payload = await get_from_sefaria(
-                    self.http_client,
-                    f"texts/{quote(final_ref)}",
-                    api_url=self.api_url,
-                    api_key=self.api_key,
-                    params={"commentary": 0, "context": 0, "pad": 0},
+            segment_payload = None
+            if used_v3_endpoint:
+                try:
+                    segment_payload = await get_from_sefaria(
+                        self.http_client,
+                        f"texts/{quote(final_ref)}",
+                        api_url=self.api_url,
+                        api_key=self.api_key,
+                        params={"commentary": 0, "context": 0, "pad": 0},
+                    )
+                except Exception as seg_exc:  # pragma: no cover - best effort
+                    logger.warning(
+                        "SEFARIA_SERVICE: Segment fetch failed",
+                        extra={"ref": final_ref, "error": str(seg_exc)},
+                    )
+            elif isinstance(raw_result, dict):
+                segment_payload = raw_result
+                logger.info(
+                    "SEFARIA_SERVICE: Using legacy payload as segment source for '%s'",
+                    final_ref,
                 )
-            except Exception as seg_exc:  # pragma: no cover - best effort
-                logger.warning(
-                    "SEFARIA_SERVICE: Segment fetch failed",
-                    extra={"ref": final_ref, "error": str(seg_exc)},
-                )
-                segment_payload = None
 
             raw_text = None
             raw_he = None

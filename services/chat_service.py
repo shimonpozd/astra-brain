@@ -77,6 +77,40 @@ class ChatService:
             json.dumps(session.to_dict()),
             ex=self._session_ttl_seconds,
         )
+
+    async def get_all_chats(self, user_id: str) -> List[Dict[str, Any]]:
+        """Return chat sessions owned by the given user."""
+        from brain_service.services.session_service import SessionService
+
+        session_service = SessionService(self.redis_client, self.user_service)
+        sessions = await session_service.get_all_sessions(user_id)
+        chats = [session for session in sessions if session.get("type") == "chat"]
+
+        # Ensure chats are ordered with newest first, fallback to insertion order
+        chats_with_dates = [chat for chat in chats if chat.get("last_modified")]
+        chats_without_dates = [chat for chat in chats if not chat.get("last_modified")]
+        chats_with_dates.sort(key=lambda item: item["last_modified"], reverse=True)
+        return chats_with_dates + chats_without_dates
+
+    async def get_chat_history(self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
+        """Return serialized messages for a chat session owned by the user."""
+        from brain_service.services.session_service import SessionService
+
+        session_service = SessionService(self.redis_client, self.user_service)
+        session_data = await session_service.get_session(user_id, session_id)
+        if not session_data:
+            logger.info(
+                "Chat history requested for missing session",
+                extra={"session_id": session_id, "user_id": user_id},
+            )
+            return []
+
+        messages = session_data.get("short_term_memory") or []
+        ordered_messages = sorted(
+            (msg for msg in messages if isinstance(msg, dict)),
+            key=lambda msg: msg.get("timestamp") or msg.get("ts") or 0,
+        )
+        return ordered_messages
     
     async def get_llm_response_stream(
         self,
