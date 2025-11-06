@@ -147,7 +147,10 @@ class UserService:
         async with self._session_factory() as session:
             async with session.begin():
                 result = await session.scalars(
-                    select(ChatThread).where(ChatThread.session_id == session_id)
+                    select(ChatThread).where(
+                        ChatThread.session_id == session_id,
+                        ChatThread.user_id == user_id,
+                    )
                 )
                 thread = result.first()
                 if thread:
