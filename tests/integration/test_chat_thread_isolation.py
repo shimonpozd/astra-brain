@@ -5,7 +5,6 @@ from fnmatch import fnmatch
 
 import pytest
 from sqlalchemy import delete, select
-from sqlalchemy.exc import IntegrityError
 
 from brain_service.core.database import create_engine, create_session_factory
 from brain_service.core.settings import Settings
@@ -19,6 +18,7 @@ class FakeRedis:
 
     def __init__(self, initial=None):
         self._store: dict[str, str] = dict(initial or {})
+        self._hashes: dict[str, dict[str, str]] = {}
 
     async def get(self, key: str):
         return self._store.get(key)
@@ -33,6 +33,15 @@ class FakeRedis:
         for key in list(self._store.keys()):
             if fnmatch(key, pattern):
                 yield key
+
+    async def hget(self, name: str, field: str):
+        return self._hashes.get(name, {}).get(field)
+
+    async def hset(self, name: str, field: str, value: str):
+        self._hashes.setdefault(name, {})[field] = value
+
+    async def hdel(self, name: str, field: str):
+        self._hashes.get(name, {}).pop(field, None)
 
 
 def _session_payload(session_id: str, user_id: uuid.UUID, name: str) -> str:
@@ -71,14 +80,13 @@ async def test_upsert_thread_rejects_cross_user_reassignment():
             metadata={"source": "test"},
         )
 
-        with pytest.raises(IntegrityError):
-            await user_service.upsert_thread(
-                session_id=shared_session_id,
-                user_id=user2.id,
-                title="User2 Chat",
-                last_modified=now,
-                metadata={"source": "test"},
-            )
+        await user_service.upsert_thread(
+            session_id=shared_session_id,
+            user_id=user2.id,
+            title="User2 Chat",
+            last_modified=now,
+            metadata={"source": "test"},
+        )
 
         async with session_factory() as session:
             result = await session.execute(
@@ -86,10 +94,10 @@ async def test_upsert_thread_rejects_cross_user_reassignment():
                     ChatThread.session_id == shared_session_id
                 )
             )
-            owner_id, title = result.one()
+            rows = result.all()
 
-        assert owner_id == user1.id
-        assert title == "User1 Chat"
+        assert {row[0] for row in rows} == {user1.id, user2.id}
+        assert {row[1] for row in rows} == {"User1 Chat", "User2 Chat"}
     finally:
         async with session_factory() as session:
             async with session.begin():

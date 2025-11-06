@@ -21,6 +21,7 @@ class SessionService:
     def __init__(self, redis_client: redis.Redis, user_service: UserService):
         self.redis_client = redis_client
         self.user_service = user_service
+        self._study_owner_hash = "study:owners"
 
     @staticmethod
     def _normalize_user_id(user_id: str) -> tuple[str, uuid.UUID]:
@@ -33,6 +34,26 @@ class SessionService:
     @staticmethod
     def _chat_key(user_id: str, session_id: str) -> str:
         return f"session:{user_id}:{session_id}"
+    
+    async def _get_study_owner(self, session_id: str) -> Optional[str]:
+        if not self.redis_client:
+            return None
+        owner = await self.redis_client.hget(self._study_owner_hash, session_id)
+        if owner is None:
+            return None
+        return owner.decode() if isinstance(owner, bytes) else str(owner)
+
+    async def _set_study_owner(self, session_id: str, user_id: str) -> None:
+        if not self.redis_client:
+            return
+        await self.redis_client.hset(self._study_owner_hash, session_id, user_id)
+
+    async def _ensure_study_owner(self, session_id: str, user_id: str) -> bool:
+        owner = await self._get_study_owner(session_id)
+        if owner is None:
+            await self._set_study_owner(session_id, user_id)
+            return True
+        return owner == user_id
     
     async def get_all_sessions(self, user_id: str) -> List[Dict[str, Any]]:
         """
@@ -127,20 +148,25 @@ class SessionService:
         # Study sessions (global)
         try:
             async for key in self.redis_client.scan_iter("study:sess:*:top"):
-                try:
-                    session_id = key.split(':')[2]
-                except (IndexError, AttributeError) as exc:
+                key_str = key.decode() if isinstance(key, bytes) else key
+                parts = key_str.split(":")
+                if len(parts) < 4:
                     logger.warning(
                         "Failed to process study session key",
-                        extra={"key": key, "error": str(exc)},
+                        extra={"key": key_str},
                     )
+                    continue
+                session_id = ":".join(parts[2:-1]) or parts[2]
+
+                owner = await self._get_study_owner(session_id)
+                if owner is None or owner != user_id_str:
                     continue
 
                 name = "Study Session"
                 last_modified_iso: Optional[str] = None
 
                 try:
-                    session_blob = await self.redis_client.get(key)
+                    session_blob = await self.redis_client.get(key_str)
                     if session_blob:
                         data = json.loads(session_blob)
                         if isinstance(data, dict):
@@ -180,32 +206,39 @@ class SessionService:
         try:
             daily_keys = [key async for key in self.redis_client.scan_iter("daily:sess:*:top")]
             for key in daily_keys:
-                try:
-                    session_id = key.split(':')[2]
-                    session_blob = await self.redis_client.get(key)
-                    if session_blob:
-                        try:
-                            session = json.loads(session_blob)
-                        except json.JSONDecodeError:
-                            logger.warning("Failed to decode daily session JSON", extra={"key": key})
-                            continue
-                        sessions.append({
-                            "session_id": session_id,
-                            "name": session.get("title", "Daily Study"),
-                            "last_modified": session.get("last_modified", datetime.now().isoformat()),
-                            "type": "daily",
-                            "completed": session.get("completed", False),
-                        })
-                    else:
-                        sessions.append({
-                            "session_id": session_id,
-                            "name": "Daily Study",
-                            "last_modified": datetime.now().isoformat(),
-                            "type": "daily",
-                            "completed": False,
-                        })
-                except (IndexError, AttributeError) as exc:
-                    logger.warning("Failed to process daily session key", extra={"key": key, "error": str(exc)})
+                key_str = key.decode() if isinstance(key, bytes) else key
+                parts = key_str.split(":")
+                if len(parts) < 4:
+                    logger.warning("Failed to process daily session key", extra={"key": key_str})
+                    continue
+                session_id = ":".join(parts[2:-1]) or parts[2]
+
+                owner = await self._get_study_owner(session_id)
+                if owner is None or owner != user_id_str:
+                    continue
+
+                session_blob = await self.redis_client.get(key_str)
+                if session_blob:
+                    try:
+                        session = json.loads(session_blob)
+                    except json.JSONDecodeError:
+                        logger.warning("Failed to decode daily session JSON", extra={"key": key_str})
+                        continue
+                    sessions.append({
+                        "session_id": session_id,
+                        "name": session.get("title", "Daily Study"),
+                        "last_modified": session.get("last_modified", datetime.now().isoformat()),
+                        "type": "daily",
+                        "completed": session.get("completed", False),
+                    })
+                else:
+                    sessions.append({
+                        "session_id": session_id,
+                        "name": "Daily Study",
+                        "last_modified": datetime.now().isoformat(),
+                        "type": "daily",
+                        "completed": False,
+                    })
         except Exception as exc:
             logger.error("Error occurred while scanning for daily sessions", extra={"error": str(exc)})
 
@@ -244,6 +277,10 @@ class SessionService:
                     return session
 
             # Study session (global)
+            owner = await self._get_study_owner(session_id)
+            if owner != user_id_str:
+                return None
+
             study_data = await self.redis_client.get(f"study:sess:{session_id}:top")
             if study_data:
                 logger.info("Retrieved study session", extra={"session_id": session_id})
@@ -252,6 +289,9 @@ class SessionService:
             # Daily session (global)
             daily_data = await self.redis_client.get(f"daily:sess:{session_id}:top")
             if daily_data:
+                owner = await self._get_study_owner(session_id)
+                if owner != user_id_str:
+                    return None
                 logger.info("Retrieved daily session", extra={"session_id": session_id})
                 return json.loads(daily_data)
 
@@ -297,9 +337,17 @@ class SessionService:
                 key = self._chat_key(user_id_str, session_id)
                 session_data.setdefault("user_id", user_id_str)
             elif session_type == "study":
+                if not user_id:
+                    raise ValueError("user_id is required for study sessions")
+                user_id_str, _ = self._normalize_user_id(user_id)
                 key = f"study:sess:{session_id}:top"
+                await self._set_study_owner(session_id, user_id_str)
             elif session_type == "daily":
+                if not user_id:
+                    raise ValueError("user_id is required for daily sessions")
+                user_id_str, _ = self._normalize_user_id(user_id)
                 key = f"daily:sess:{session_id}:top"
+                await self._set_study_owner(session_id, user_id_str)
             else:
                 logger.error("Invalid session type", extra={"session_type": session_type})
                 return False
@@ -344,6 +392,8 @@ class SessionService:
             else:
                 chat_key = f"session:{session_id}"
             study_key = f"study:sess:{session_id}:top"
+            daily_key = f"daily:sess:{session_id}:top"
+            owner_cleared = False
             
             deleted_count = 0
             if await self.redis_client.exists(chat_key):
@@ -353,6 +403,15 @@ class SessionService:
             if await self.redis_client.exists(study_key):
                 await self.redis_client.delete(study_key)
                 deleted_count += 1
+                owner_cleared = True
+            
+            if await self.redis_client.exists(daily_key):
+                await self.redis_client.delete(daily_key)
+                deleted_count += 1
+                owner_cleared = True
+
+            if owner_cleared:
+                await self.redis_client.hdel(self._study_owner_hash, session_id)
             
             if deleted_count > 0:
                 logger.info("Session deleted", extra={

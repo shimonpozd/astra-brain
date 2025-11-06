@@ -116,6 +116,26 @@ class StudyService:
             },
         )
     
+    async def _ensure_session_owner(self, session_id: str, user_id: str) -> None:
+        """
+        Ensure that the study session is owned by the specified user.
+
+        If the session has no recorded owner, assign it to the user. Otherwise,
+        raise PermissionError when attempting to access a session owned by
+        someone else.
+        """
+        if not self.redis_client:
+            return
+
+        owner = await self.redis_client.hget("study:owners", session_id)
+        if owner is None:
+            await self.redis_client.hset("study:owners", session_id, user_id)
+            return
+
+        owner_value = owner.decode() if isinstance(owner, bytes) else str(owner)
+        if owner_value != user_id:
+            raise PermissionError("Session belongs to another user")
+    
     async def _migrate_legacy_history_if_needed(self, session_id: str):
         """Migrate legacy history format to new format if needed."""
         # Use appropriate key prefix for legacy migration
@@ -151,8 +171,9 @@ class StudyService:
         except Exception as e:
             logger.error(f"Migrate legacy history failed for {session_id}: {e}")
     
-    async def get_state(self, session_id: str) -> StudyStateResponse:
+    async def get_state(self, session_id: str, user_id: str) -> StudyStateResponse:
         """Get the entire study state for a session."""
+        await self._ensure_session_owner(session_id, user_id)
         snapshot = await get_current_snapshot(session_id, self.redis_client)
         if not snapshot:
             return StudyStateResponse(ok=True, state=None)
@@ -181,8 +202,9 @@ class StudyService:
         
         return StudyStateResponse(ok=True, state=snapshot)
     
-    async def set_focus(self, request: StudySetFocusRequest) -> StudyStateResponse:
+    async def set_focus(self, request: StudySetFocusRequest, user_id: str) -> StudyStateResponse:
         """Set focus on a specific reference and update study state."""
+        await self._ensure_session_owner(request.session_id, user_id)
         logger.info(f"🔥 SET_FOCUS REQUEST: session_id='{request.session_id}', ref='{request.ref}', window_size={request.window_size}")
         try:
             # Check if this is a daily session - use explicit flag
@@ -495,22 +517,25 @@ class StudyService:
             logger.error(f"🔥 ERROR GETTING DAILY REFERENCE: {str(e)}")
         return None
     
-    async def navigate_back(self, request: StudyNavigateRequest) -> StudyStateResponse:
+    async def navigate_back(self, request: StudyNavigateRequest, user_id: str) -> StudyStateResponse:
         """Move the history cursor back one step and return the state."""
+        await self._ensure_session_owner(request.session_id, user_id)
         new_snapshot = await move_cursor(request.session_id, -1, self.redis_client)
         if not new_snapshot:
             return StudyStateResponse(ok=False, error="No previous state available")
         return StudyStateResponse(ok=True, state=new_snapshot)
     
-    async def navigate_forward(self, request: StudyNavigateRequest) -> StudyStateResponse:
+    async def navigate_forward(self, request: StudyNavigateRequest, user_id: str) -> StudyStateResponse:
         """Move the history cursor forward one step and return the state."""
+        await self._ensure_session_owner(request.session_id, user_id)
         new_snapshot = await move_cursor(request.session_id, 1, self.redis_client)
         if not new_snapshot:
             return StudyStateResponse(ok=False, error="No next state available")
         return StudyStateResponse(ok=True, state=new_snapshot)
     
-    async def set_workbench(self, request: StudyWorkbenchSetRequest) -> StudyStateResponse:
+    async def set_workbench(self, request: StudyWorkbenchSetRequest, user_id: str) -> StudyStateResponse:
         """Set workbench items for a study session."""
+        await self._ensure_session_owner(request.session_id, user_id)
         current_snapshot = await get_current_snapshot(request.session_id, self.redis_client)
         if not current_snapshot:
             return StudyStateResponse(ok=False, error="No current study state found")
@@ -600,8 +625,10 @@ class StudyService:
 
         return StudyStateResponse(ok=True, state=current_snapshot)
     
-    async def get_bookshelf(self, request: StudyBookshelfRequest) -> Dict[str, Any]:
+    async def get_bookshelf(self, request: StudyBookshelfRequest, user_id: str) -> Dict[str, Any]:
         """Get bookshelf data for a reference."""
+        if request.session_id:
+            await self._ensure_session_owner(request.session_id, user_id)
         try:
             bookshelf_data = await get_bookshelf_for(
                 request.ref, 
@@ -637,8 +664,9 @@ class StudyService:
             logger.error(f"Failed to resolve book name {request.book_name}: {e}", exc_info=True)
             return {"ok": False, "error": str(e)}
     
-    async def set_chat_focus(self, request: StudyChatSetFocusRequest) -> StudyStateResponse:
+    async def set_chat_focus(self, request: StudyChatSetFocusRequest, user_id: str) -> StudyStateResponse:
         """Set focus for study chat."""
+        await self._ensure_session_owner(request.session_id, user_id)
         current_snapshot = await get_current_snapshot(request.session_id, self.redis_client)
         if not current_snapshot:
             return StudyStateResponse(ok=False, error="No current study state found")
@@ -655,7 +683,8 @@ class StudyService:
     
     async def process_study_chat_stream(
         self, 
-        request: StudyChatRequest
+        request: StudyChatRequest,
+        user_id: str
     ) -> AsyncGenerator[str, None]:
         """
         Process a study chat stream request with context-aware agent selection.
@@ -666,6 +695,7 @@ class StudyService:
         Yields:
             JSON strings with streaming events
         """
+        await self._ensure_session_owner(request.session_id, user_id)
         logger.info(f"--- New Study Chat Request ---")
         
         # Get current study state
