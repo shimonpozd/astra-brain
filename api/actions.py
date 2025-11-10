@@ -36,6 +36,43 @@ async def translate_handler(
 
 
 
+def _format_sefaria_fallback(term: str, data: dict, context: str) -> str:
+    """Produce a plain-text explanation using raw lexicon data when LLMs fail."""
+    if not data or not isinstance(data, dict):
+        return (
+            f"Не удалось получить ответ модели. Доступное определение термина «{term}» отсутствует."
+        )
+
+    parts = [f"Термин: {term}"]
+    if context:
+        parts.append(f"Контекст: {context}")
+
+    entries = data.get("entries") or []
+    if entries:
+        parts.append("Определения:")
+        for idx, entry in enumerate(entries[:3], start=1):
+            definition = entry.get("definition") or entry.get("text") or ""
+            definition = definition.strip()
+            if not definition:
+                continue
+            parts.append(f"{idx}. {definition}")
+    else:
+        summary = data.get("summary") or data.get("definition")
+        if summary:
+            parts.append(f"Определение: {summary}")
+
+    metadata = data.get("metadata") or {}
+    if metadata.get("root"):
+        parts.append(f"Предполагаемый корень: {metadata['root']}")
+    elif data.get("root"):
+        parts.append(f"Предполагаемый корень: {data['root']}")
+
+    if len(parts) == 1:
+        parts.append("Сырые данные: " + json.dumps(data, ensure_ascii=False)[:500])
+
+    return "\n".join(parts)
+
+
 @router.post("/explain-term")
 async def explain_term_handler(
     request: ExplainTermRequest,
@@ -151,7 +188,8 @@ async def explain_term_handler(
                     logger.warning("LEXICON tools disabled due to error; retrying without tools", extra={"error": str(exc)})
                     continue
                 logger.error("LEXICON_STREAM: LLM error", extra={"error": str(exc)}, exc_info=True)
-                yield "Error: language model failed to generate an explanation."
+                fallback = _format_sefaria_fallback(request.term, sefaria_data, context_text)
+                yield fallback
                 return
 
             async for chunk in stream:
