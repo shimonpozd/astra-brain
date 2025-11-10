@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Set
 from urllib.parse import quote
 
 import httpx
@@ -29,6 +29,18 @@ class LexiconService:
         self.redis_client = redis_client
         self.api_url = sefaria_api_url.rstrip('/')
         self.cache_ttl = cache_ttl_sec
+        self._sofit_map = str.maketrans({
+            "ך": "כ",
+            "ם": "מ",
+            "ן": "נ",
+            "ף": "פ",
+            "ץ": "צ"
+        })
+        self._root_prefixes: tuple[str, ...] = ("ו", "ה", "ב", "כ", "ל", "מ", "ש")
+        self._root_suffixes: tuple[str, ...] = (
+            "ים", "ות", "ה", "ך", "ךָ", "ךְ", "כם", "כן", "נו",
+            "יה", "יו", "יי", "ון", "ין"
+        )
     
     def _cache_key(self, word: str) -> str:
         """Generate cache key for lexicon entry."""
@@ -382,3 +394,81 @@ class LexiconService:
         else:
             return truncated + "..."
 
+    def _normalize_letter_forms(self, word: str) -> str:
+        """Convert final-form Hebrew letters to their standard form."""
+        return word.translate(self._sofit_map)
+
+    def _generate_root_candidates(self, word: str, max_candidates: int = 10) -> List[str]:
+        """Generate heuristic variations that might match the lexical root."""
+        normalized = self._normalize_letter_forms(word.strip())
+        candidates: List[str] = []
+        seen: Set[str] = set()
+
+        def add_candidate(val: str):
+            val = self._normalize_letter_forms(val.strip())
+            if len(val) < 3:
+                return
+            if val not in seen:
+                seen.add(val)
+                candidates.append(val)
+
+        add_candidate(normalized)
+
+        # Strip single-letter prefixes
+        for prefix in self._root_prefixes:
+            if normalized.startswith(prefix) and len(normalized) - len(prefix) >= 3:
+                add_candidate(normalized[len(prefix):])
+
+        # Strip suffixes
+        for suffix in self._root_suffixes:
+            if normalized.endswith(suffix) and len(normalized) - len(suffix) >= 3:
+                add_candidate(normalized[:-len(suffix)])
+
+        # Strip both prefix and suffix
+        for prefix in self._root_prefixes:
+            if not normalized.startswith(prefix):
+                continue
+            trimmed = normalized[len(prefix):]
+            for suffix in self._root_suffixes:
+                if trimmed.endswith(suffix) and len(trimmed) - len(suffix) >= 3:
+                    add_candidate(trimmed[:-len(suffix)])
+
+        # Simple fallback: drop the last letter to capture base root
+        if len(normalized) > 3:
+            add_candidate(normalized[:-1])
+
+        return candidates[:max_candidates]
+
+    async def get_root_suggestions(self, word: str, max_candidates: int = 5) -> Dict[str, Any]:
+        """Suggest possible root forms and their lightweight definitions."""
+        if not word or not word.strip():
+            return {"ok": False, "error": "word parameter is required"}
+
+        variants = self._generate_root_candidates(word, max_candidates * 2)
+        suggestions: List[Dict[str, Any]] = []
+
+        for variant in variants:
+            try:
+                definition = await self.get_word_definition_for_tool(variant)
+            except Exception as exc:
+                logger.error("Failed to resolve root candidate", extra={
+                    "query_word": word,
+                    "variant": variant,
+                    "error": str(exc)
+                })
+                definition = {"ok": False, "error": str(exc)}
+
+            suggestions.append({
+                "word": variant,
+                "found": bool(definition.get("ok")),
+                "lexicon": definition.get("data") if definition.get("ok") else None,
+                "error": None if definition.get("ok") else definition.get("error"),
+            })
+
+            if len(suggestions) >= max_candidates:
+                break
+
+        if not suggestions:
+            return {"ok": False, "error": f"No alternative candidates generated for '{word}'"}
+
+        return {"ok": True, "query": word, "suggestions": suggestions}

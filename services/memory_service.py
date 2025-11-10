@@ -32,6 +32,7 @@ class MemoryService:
     MAX_OPEN_LOOPS = 10
     MAX_REFS = 10
     MAX_GLOSSARY = 20
+    MAX_ACTION_ITEMS = 12
     MAX_SUMMARY_ITEMS = 8
     MAX_SUMMARY_LEN = 140
     
@@ -40,6 +41,16 @@ class MemoryService:
     
     # Regex for Sefaria references
     TREF_RE = re.compile(r"[A-Z][a-zA-Z]+(?:\s[0-9]+[ab])?[:\s]\d+(?::\d+)?")
+    
+    ACTION_KEYWORDS = [
+        "open", "review", "study", "explore", "try", "compare", "focus", "analyze",
+        "practice", "read", "check", "explain", "consider", "look at", "summarize",
+        "outline", "plan", "draft", "implement", "debug", "investigate", "analyze",
+        "apply", "follow", "examine", "walk through", "remember", "use",
+        "открой", "посмотри", "прочитай", "изучи", "перейди", "попробуй",
+        "проанализируй", "сравни", "ответь", "объясни", "подготовь", "расскажи",
+        "разбери", "упомяни", "напомни"
+    ]
     
     def __init__(self, redis_client: redis.Redis, ttl_sec: int = DEFAULT_TTL_SEC, config: Optional[Dict[str, Any]] = None, summary_service=None):
         self.redis_client = redis_client
@@ -65,6 +76,7 @@ class MemoryService:
         self.max_open_loops = slots_config.get("open_loops_max_items", self.MAX_OPEN_LOOPS)
         self.max_refs = slots_config.get("refs_max_items", self.MAX_REFS)
         self.max_glossary = slots_config.get("glossary_max_items", self.MAX_GLOSSARY)
+        self.max_action_items = slots_config.get("actions_max_items", self.MAX_ACTION_ITEMS)
         self.max_summary_items = slots_config.get("summary_max_items", self.MAX_SUMMARY_ITEMS)
         self.hamming_threshold = slots_config.get("facts_hamm_thresh", self.HAMMING_THRESHOLD)
         
@@ -78,6 +90,7 @@ class MemoryService:
         self.inject_top_facts = inject_config.get("top_facts", 3)
         self.inject_top_loops = inject_config.get("top_open_loops", 2)
         self.inject_top_refs = inject_config.get("top_refs", 3)
+        self.inject_top_actions = inject_config.get("top_actions", 3)
         self.include_when_empty = inject_config.get("include_when_empty", False)
         self.max_chars_budget = inject_config.get("max_chars_budget", 1200)
     
@@ -93,9 +106,17 @@ class MemoryService:
             return None
             
         try:
+            stm_data = {}
             raw = await self.redis_client.get(f"stm:{session_id}")
             if raw:
                 stm_data = json.loads(raw)
+            last_raw = await self.redis_client.get(f"stm:last:{session_id}")
+            if last_raw:
+                try:
+                    stm_data["last_assistant_msg"] = json.loads(last_raw)
+                except json.JSONDecodeError:
+                    logger.warning("Failed to decode last assistant cache", extra={"session_id": session_id})
+            if stm_data:
                 logger.debug("STM retrieved", extra={
                     "session_id": session_id,
                     "facts_count": len(stm_data.get("salient_facts", [])),
@@ -128,6 +149,7 @@ class MemoryService:
         # Count messages and estimate tokens
         message_count = len(last_messages)
         token_count = sum(len(str(msg.get("content", ""))) for msg in last_messages) // 4
+        has_new_assistant = any(msg.get("role") == "assistant" for msg in last_messages)
         
         # Check if we should update
         should_update = await self.should_update_stm(session_id, message_count, token_count)
@@ -135,6 +157,10 @@ class MemoryService:
         if should_update:
             await self.update_stm(session_id, last_messages)
             return True
+        
+        # Ensure most recent assistant reply is still cached for prompt injection
+        if has_new_assistant:
+            await self._cache_last_assistant_message(session_id, last_messages)
         
         return False
     
@@ -185,6 +211,14 @@ class MemoryService:
             
             last_ts = float(meta.get(b"last_update_ts", 0) or 0)
             since = now - last_ts
+            is_bootstrap = last_ts == 0
+            if is_bootstrap and message_count > 0:
+                logger.debug("STM bootstrap update", extra={
+                    "session_id": session_id,
+                    "msgs": message_count,
+                    "tokens": token_count
+                })
+                return True
             
             # Check cooldown
             if since < cooldown_sec:
@@ -196,10 +230,13 @@ class MemoryService:
                 return False
             
             # Hysteresis logic
+            soft_msgs = max(2, trigger_msgs_low // 2 or 1)
+            soft_tokens = max(200, trigger_tokens_low // 2 or 50)
             should_update = (
                 message_count >= trigger_msgs_high or 
                 token_count >= trigger_tokens_high or
-                (message_count >= trigger_msgs_low and token_count >= trigger_tokens_low)
+                (message_count >= trigger_msgs_low and token_count >= trigger_tokens_low) or
+                (since >= cooldown_sec * 2 and (message_count >= soft_msgs or token_count >= soft_tokens))
             )
             
             logger.debug("STM update decision", extra={
@@ -319,6 +356,9 @@ class MemoryService:
             salient_facts = self._extract_salient_facts_structured(last_messages)
             open_loops = self._extract_open_loops_structured(last_messages)
             glossary = self._extract_glossary(last_messages)
+            action_items = self._extract_action_items(last_messages)
+            new_assistant_msg = self._extract_last_assistant_message(last_messages)
+            last_assistant_msg = new_assistant_msg or existing_stm.get("last_assistant_msg")
             
             # Merge with existing data using SimHash deduplication
             merged_facts = self._merge_facts_structured(
@@ -337,11 +377,17 @@ class MemoryService:
                 existing_stm.get("refs", []),
                 refs
             )
+            merged_actions = self._merge_structured_items(
+                existing_stm.get("action_items", []),
+                action_items,
+                self.hamming_threshold
+            )
             
             # Apply decay to existing items
             merged_facts = self._apply_decay(merged_facts)
             merged_loops = self._apply_decay(merged_loops)
             merged_glossary = self._apply_decay(merged_glossary)
+            merged_actions = self._apply_decay(merged_actions)
             
             # Create new STM with structured slots
             stm = {
@@ -351,9 +397,12 @@ class MemoryService:
                 "open_loops": merged_loops[:self.max_open_loops],
                 "glossary": merged_glossary[:self.max_glossary],
                 "refs": merged_refs[:self.max_refs],
+                "action_items": merged_actions[:self.max_action_items],
                 "persona_ctx": existing_stm.get("persona_ctx", {}),
                 "ts_updated": time.time()
             }
+            if last_assistant_msg:
+                stm["last_assistant_msg"] = last_assistant_msg
             
             # Save to Redis
             await self.redis_client.set(
@@ -361,6 +410,8 @@ class MemoryService:
                 json.dumps(stm, ensure_ascii=False),
                 ex=self.ttl
             )
+            if new_assistant_msg:
+                await self._cache_last_assistant_message(session_id, message=new_assistant_msg)
             
             # Mark as updated
             await self.mark_updated(session_id)
@@ -375,6 +426,8 @@ class MemoryService:
                 "loops_out": len(merged_loops),
                 "refs_in": len(refs),
                 "refs_out": len(merged_refs),
+                "actions_in": len(action_items),
+                "actions_out": len(merged_actions),
                 "summary_len": len(summary_v1),
                 "latency_ms": latency_ms
             })
@@ -451,6 +504,22 @@ class MemoryService:
                 break
         
         return result.strip()
+    
+    def _extract_last_assistant_message(self, messages: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Pick the most recent assistant reply and condense it for prompt injection."""
+        for msg in reversed(messages):
+            if msg.get("role") != "assistant":
+                continue
+            content = msg.get("content", "")
+            if not isinstance(content, str):
+                continue
+            condensed = self._condense_text(content, self.MAX_SUMMARY_LEN)
+            if condensed:
+                return {
+                    "text": condensed,
+                    "ts": time.time()
+                }
+        return None
     
     def _extract_salient_facts_structured(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Extract salient facts as structured objects with scores and signatures."""
@@ -580,6 +649,71 @@ class MemoryService:
         
         return glossary[:5]
     
+    def _extract_action_items(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Capture actionable assistant suggestions/next steps."""
+        actions = []
+        
+        for msg in messages:
+            if msg.get("role") != "assistant":
+                continue
+            content = msg.get("content", "")
+            if not isinstance(content, str):
+                continue
+            
+            segments = self._split_action_segments(content)
+            for segment in segments:
+                normalized = segment.strip(" -*•")
+                if not normalized or len(normalized) < 8 or len(normalized) > 200:
+                    continue
+                lowered = normalized.lower()
+                if not self._looks_like_action(lowered):
+                    continue
+                action = {
+                    "text": normalized,
+                    "score": 1.0 + (0.2 if normalized.endswith(("!", ".")) else 0.0),
+                    "ts": time.time(),
+                    "sig": self._simhash64(normalized)
+                }
+                actions.append(action)
+        
+        # Prioritize the latest actionable suggestions
+        actions.sort(key=lambda x: (-x["score"], -x["ts"]))
+        return actions[:self.max_action_items]
+    
+    def _split_action_segments(self, text: str) -> List[str]:
+        """Split assistant text into candidate actionable segments."""
+        segments: List[str] = []
+        for line in re.split(r"[\r\n]+", text):
+            line = line.strip()
+            if not line:
+                continue
+            line = re.sub(r"^[\-\•\*\d\.\)]+", "", line).strip()
+            if not line:
+                continue
+            sentences = re.split(r"(?<=[.!?])\s+", line)
+            for sentence in sentences:
+                sentence = sentence.strip(" -*•")
+                if sentence:
+                    segments.append(sentence)
+        return segments
+    
+    def _looks_like_action(self, lowered_text: str) -> bool:
+        """Heuristic check for actionable commands/instructions."""
+        prefixes = [
+            "please ", "let's ", "let us ", "давай ", "нужно ", "надо ", "попробуй ",
+            "постарайся ", "советую ", "рекомендую "
+        ]
+        for prefix in prefixes:
+            if lowered_text.startswith(prefix):
+                lowered_text = lowered_text[len(prefix):].lstrip()
+                break
+        for keyword in self.ACTION_KEYWORDS:
+            if lowered_text.startswith(keyword):
+                return True
+            if f" {keyword}" in lowered_text:
+                return True
+        return False
+    
     def _extract_term_definition(self, content: str) -> Optional[Dict[str, str]]:
         """Extract term and definition from content."""
         # Look for patterns like "X means Y" or "X — это Y"
@@ -673,6 +807,33 @@ class MemoryService:
         result.sort(key=lambda x: (-x.get("score", 0), -x.get("ts", 0)))
         return result
     
+    async def _cache_last_assistant_message(
+        self,
+        session_id: str,
+        last_messages: Optional[List[Dict[str, Any]]] = None,
+        message: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Store the most recent assistant reply separately for lightweight recall."""
+        if not self.redis_client:
+            return
+        
+        if message is None and last_messages:
+            message = self._extract_last_assistant_message(last_messages)
+        if not message:
+            return
+        
+        try:
+            await self.redis_client.set(
+                f"stm:last:{session_id}",
+                json.dumps(message, ensure_ascii=False),
+                ex=self.ttl
+            )
+        except Exception as e:
+            logger.error("Failed to cache last assistant reply", extra={
+                "session_id": session_id,
+                "error": str(e)
+            })
+    
     def _apply_decay(self, items: List[Dict[str, Any]], decay_rate: Optional[float] = None) -> List[Dict[str, Any]]:
         """Apply exponential decay to item scores based on age."""
         import math
@@ -705,6 +866,7 @@ class MemoryService:
             # Clear both STM data and metadata
             await self.redis_client.delete(f"stm:{session_id}")
             await self.redis_client.delete(f"stm:meta:{session_id}")
+            await self.redis_client.delete(f"stm:last:{session_id}")
             
             logger.info("STM cleared", extra={"session_id": session_id})
             return True
@@ -715,7 +877,7 @@ class MemoryService:
             })
             return False
     
-    def format_stm_for_prompt(self, stm: Dict[str, Any], max_facts: Optional[int] = None, max_loops: Optional[int] = None, max_refs: Optional[int] = None, max_chars_budget: Optional[int] = None) -> str:
+    def format_stm_for_prompt(self, stm: Dict[str, Any], max_facts: Optional[int] = None, max_loops: Optional[int] = None, max_refs: Optional[int] = None, max_actions: Optional[int] = None, max_chars_budget: Optional[int] = None) -> str:
         """
         Format STM data for inclusion in LLM prompts.
         
@@ -724,6 +886,7 @@ class MemoryService:
             max_facts: Maximum number of facts to include (uses config if None)
             max_loops: Maximum number of open loops to include (uses config if None)
             max_refs: Maximum number of references to include (uses config if None)
+            max_actions: Maximum number of action items to include (uses config if None)
             
         Returns:
             Formatted string for prompt inclusion
@@ -735,6 +898,7 @@ class MemoryService:
         max_facts = max_facts or self.inject_top_facts
         max_loops = max_loops or self.inject_top_loops
         max_refs = max_refs or self.inject_top_refs
+        max_actions = max_actions or self.inject_top_actions
         if max_chars_budget is None:
             max_chars_budget = self.max_chars_budget
         
@@ -748,6 +912,16 @@ class MemoryService:
             parts.append(s)
             budget += len(s) + 1
             return True
+        
+        # Always include the most recent assistant reply when available
+        recent_reply = (stm.get("last_assistant_msg") or {}) if isinstance(stm, dict) else {}
+        recent_text = recent_reply.get("text") if isinstance(recent_reply, dict) else ""
+        if recent_text:
+            if not add_line("[Recent Assistant Reply]"):
+                return "\n".join(parts)
+            if not add_line(f"- {recent_text}"):
+                return "\n".join(parts)
+            add_line("")
         
         # Add summary bullets (prefer summary_v2, fallback to summary_v1) - highest priority
         summary = stm.get("summary_v2", []) or stm.get("summary_v1", [])
@@ -779,6 +953,16 @@ class MemoryService:
                     return "\n".join(parts)
             add_line("")
         
+        # Add assistant action suggestions - fourth priority
+        actions = stm.get("action_items", [])
+        if actions:
+            if not add_line("[Action Suggestions]"):
+                return "\n".join(parts)
+            for action in actions[:max_actions]:
+                if not add_line(f"• {action.get('text', '')}"):
+                    return "\n".join(parts)
+            add_line("")
+        
         # Add references - lowest priority
         refs = stm.get("refs", [])
         if refs:
@@ -802,8 +986,8 @@ class MemoryService:
             "facts_count": len(stm.get("salient_facts", [])),
             "loops_count": len(stm.get("open_loops", [])),
             "glossary_count": len(stm.get("glossary", [])),
+            "action_count": len(stm.get("action_items", [])),
             "refs_count": len(stm.get("refs", [])),
             "last_updated": stm.get("ts_updated", 0),
             "age_hours": (time.time() - stm.get("ts_updated", 0)) / 3600
         }
-

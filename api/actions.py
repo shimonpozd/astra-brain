@@ -1,6 +1,7 @@
 import logging
 import json
 import re
+from collections import defaultdict
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -37,18 +38,13 @@ async def translate_handler(
 
 @router.post("/explain-term")
 async def explain_term_handler(
-    request: ExplainTermRequest, 
+    request: ExplainTermRequest,
     lexicon_service = Depends(get_lexicon_service)
 ):
-    logger.info(f"Received term explanation request for: {request.term}")
+    logger.info("Received term explanation request", extra={"term": request.term})
 
-    # Get definition from lexicon service
     lexicon_result = await lexicon_service.get_word_definition(request.term)
-    
-    if lexicon_result.get("ok"):
-        sefaria_data = lexicon_result["data"]
-    else:
-        sefaria_data = {"error": lexicon_result.get("error", "Unknown error")}
+    sefaria_data = lexicon_result["data"] if lexicon_result.get("ok") else {"error": lexicon_result.get("error", "Unknown error")}
 
     try:
         llm_client, model, reasoning_params, _ = get_llm_for_task("LEXICON")
@@ -69,6 +65,55 @@ async def explain_term_handler(
     user_prompt = user_prompt_template.replace("{term}", request.term)
     user_prompt = user_prompt.replace("{context_text}", context_text)
     user_prompt = user_prompt.replace("{sefaria_data}", json.dumps(sefaria_data, indent=2, ensure_ascii=False))
+    user_prompt += "\n\nYou may invoke the available lexicon tools to look up alternate spellings or root forms when needed."
+
+    tool_handlers = {
+        "sefaria_get_lexicon": lexicon_service.get_word_definition_for_tool,
+        "sefaria_guess_root": lexicon_service.get_root_suggestions,
+    }
+
+    tool_schemas = [
+        {
+            "type": "function",
+            "function": {
+                "name": "sefaria_get_lexicon",
+                "description": "Fetch the lexicon entry for a specific Hebrew/Aramaic word.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "word": {
+                            "type": "string",
+                            "description": "The exact spelling to look up in the Sefaria lexicon."
+                        }
+                    },
+                    "required": ["word"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "sefaria_guess_root",
+                "description": "Suggest related root forms or alternative spellings and return any known lexicon data for them.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "word": {
+                            "type": "string",
+                            "description": "The word whose root or related spellings should be explored."
+                        },
+                        "max_candidates": {
+                            "type": "integer",
+                            "description": "Optional number of suggestions to return (default 5).",
+                            "minimum": 1,
+                            "maximum": 10
+                        }
+                    },
+                    "required": ["word"]
+                }
+            }
+        }
+    ]
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -76,20 +121,110 @@ async def explain_term_handler(
     ]
 
     async def stream_llm_response():
-        try:
-            stream = await llm_client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=True,
-                **reasoning_params
-            )
+        enable_tools = True
+        max_rounds = 5
+
+        while max_rounds > 0:
+            max_rounds -= 1
+            tokens: list[str] = []
+            tool_call_builders = defaultdict(lambda: {
+                "id": "",
+                "index": 0,
+                "function": {"name": "", "arguments": ""}
+            })
+
+            stream_kwargs = {
+                **reasoning_params,
+                "model": model,
+                "messages": messages,
+                "stream": True,
+            }
+            if enable_tools:
+                stream_kwargs["tools"] = tool_schemas
+                stream_kwargs["tool_choice"] = "auto"
+
+            try:
+                stream = await llm_client.chat.completions.create(**stream_kwargs)
+            except Exception as exc:
+                if enable_tools:
+                    enable_tools = False
+                    logger.warning("LEXICON tools disabled due to error; retrying without tools", extra={"error": str(exc)})
+                    continue
+                logger.error("LEXICON_STREAM: LLM error", extra={"error": str(exc)}, exc_info=True)
+                yield "Error: language model failed to generate an explanation."
+                return
+
             async for chunk in stream:
-                content = chunk.choices[0].delta.content
-                if content:
-                    yield content
-        except Exception as e:
-            logger.error(f"LEXICON_STREAM: Error during stream: {e}", exc_info=True)
-            yield json.dumps({"type": "error", "data": {"message": "Error from LLM."}})
+                choice = chunk.choices[0]
+                delta = choice.delta
+
+                if delta and delta.content:
+                    tokens.append(delta.content)
+
+                if delta and delta.tool_calls:
+                    for tool_call in delta.tool_calls:
+                        builder = tool_call_builders[tool_call.index]
+                        builder["index"] = tool_call.index
+                        if tool_call.id:
+                            builder["id"] = tool_call.id
+                        if tool_call.function:
+                            if tool_call.function.name:
+                                builder["function"]["name"] = tool_call.function.name
+                            if tool_call.function.arguments:
+                                builder["function"]["arguments"] += tool_call.function.arguments
+
+            if tool_call_builders:
+                assistant_tool_msg = {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": []
+                }
+                for builder in tool_call_builders.values():
+                    if not builder["id"]:
+                        builder["id"] = f"lexicon-tool-{builder['index']}"
+                    assistant_tool_msg["tool_calls"].append({
+                        "id": builder["id"],
+                        "type": "function",
+                        "function": builder["function"]
+                    })
+                messages.append(assistant_tool_msg)
+
+                for builder in tool_call_builders.values():
+                    tool_name = builder["function"].get("name")
+                    handler = tool_handlers.get(tool_name)
+                    if handler is None:
+                        tool_output = {"ok": False, "error": f"Unknown tool '{tool_name}'"}
+                    else:
+                        raw_args = builder["function"].get("arguments") or "{}"
+                        try:
+                            parsed_args = json.loads(raw_args)
+                        except json.JSONDecodeError:
+                            parsed_args = {}
+                        try:
+                            tool_output = await handler(**parsed_args)
+                        except Exception as tool_exc:
+                            logger.error("LEXICON tool handler failed", extra={
+                                "tool": tool_name,
+                                "error": str(tool_exc)
+                            }, exc_info=True)
+                            tool_output = {"ok": False, "error": str(tool_exc)}
+
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": builder["id"],
+                        "content": json.dumps(tool_output, ensure_ascii=False)
+                    })
+                continue
+
+            if tokens:
+                for token in tokens:
+                    yield token
+                return
+
+            yield "I was unable to generate an explanation for this term."
+            return
+
+        yield "Stopped after multiple tool attempts without a final answer."
 
     return StreamingResponse(stream_llm_response(), media_type="text/event-stream")
 
