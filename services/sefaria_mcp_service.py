@@ -82,6 +82,18 @@ class SefariaMCPService:
         except Exception:
             # Best-effort; if inspection fails, keep default True and handle at runtime
             self._call_timeout_supported = True
+        # Detect whether call_tool supports 'raise_on_error' kwarg (version compatibility)
+        self._call_raise_on_error_supported = True
+        try:
+            call_sig = inspect.signature(self._client.call_tool)  # type: ignore[attr-defined]
+            if "raise_on_error" not in call_sig.parameters:
+                self._call_raise_on_error_supported = False
+                logger.debug(
+                    "fastmcp Client.call_tool raise_on_error kwarg unsupported; will omit",
+                    extra={"endpoint": endpoint},
+                )
+        except Exception:
+            self._call_raise_on_error_supported = True
         self._lock = asyncio.Lock()
         logger.info("Initialized SefariaMCPService", extra={"endpoint": endpoint})
 
@@ -200,8 +212,9 @@ class SefariaMCPService:
                     call_kwargs: Dict[str, Any] = {
                         "name": name,
                         "arguments": cleaned_args,
-                        "raise_on_error": True,
                     }
+                    if self._call_raise_on_error_supported:
+                        call_kwargs["raise_on_error"] = True
                     if self._call_timeout_supported and timeout is not None:
                         call_kwargs["timeout"] = timeout
                     try:
@@ -214,6 +227,17 @@ class SefariaMCPService:
                                 self._call_timeout_supported = False
                                 logger.debug(
                                     "Retrying call_tool without timeout kwarg due to TypeError",
+                                    extra={"tool": name, "endpoint": self.endpoint},
+                                )
+                                result = await client.call_tool(**call_kwargs)
+                            else:
+                                raise
+                        elif "unexpected keyword argument 'raise_on_error'" in str(type_exc):
+                            if "raise_on_error" in call_kwargs:
+                                call_kwargs.pop("raise_on_error", None)
+                                self._call_raise_on_error_supported = False
+                                logger.debug(
+                                    "Retrying call_tool without raise_on_error kwarg due to TypeError",
                                     extra={"tool": name, "endpoint": self.endpoint},
                                 )
                                 result = await client.call_tool(**call_kwargs)
