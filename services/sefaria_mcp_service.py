@@ -69,6 +69,19 @@ class SefariaMCPService:
             )
             self._client = Client(self._transport)
             self._timeout_supported = False
+        # Detect whether call_tool supports 'timeout' kwarg (version compatibility)
+        self._call_timeout_supported = True
+        try:
+            call_sig = inspect.signature(self._client.call_tool)  # type: ignore[attr-defined]
+            if "timeout" not in call_sig.parameters:
+                self._call_timeout_supported = False
+                logger.debug(
+                    "fastmcp Client.call_tool timeout kwarg unsupported; will omit",
+                    extra={"endpoint": endpoint},
+                )
+        except Exception:
+            # Best-effort; if inspection fails, keep default True and handle at runtime
+            self._call_timeout_supported = True
         self._lock = asyncio.Lock()
         logger.info("Initialized SefariaMCPService", extra={"endpoint": endpoint})
 
@@ -184,12 +197,30 @@ class SefariaMCPService:
         try:
             async with self._lock:
                 async with self._client as client:
-                    result = await client.call_tool(
-                        name=name,
-                        arguments=cleaned_args,
-                        timeout=timeout,
-                        raise_on_error=True,
-                    )
+                    call_kwargs: Dict[str, Any] = {
+                        "name": name,
+                        "arguments": cleaned_args,
+                        "raise_on_error": True,
+                    }
+                    if self._call_timeout_supported and timeout is not None:
+                        call_kwargs["timeout"] = timeout
+                    try:
+                        result = await client.call_tool(**call_kwargs)
+                    except TypeError as type_exc:
+                        # Retry without timeout kwarg if this fastmcp version doesn't support it
+                        if "unexpected keyword argument 'timeout'" in str(type_exc):
+                            if "timeout" in call_kwargs:
+                                call_kwargs.pop("timeout", None)
+                                self._call_timeout_supported = False
+                                logger.debug(
+                                    "Retrying call_tool without timeout kwarg due to TypeError",
+                                    extra={"tool": name, "endpoint": self.endpoint},
+                                )
+                                result = await client.call_tool(**call_kwargs)
+                            else:
+                                raise
+                        else:
+                            raise
         except ToolError as exc:
             logger.error(
                 "Sefaria MCP tool error",
