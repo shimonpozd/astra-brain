@@ -198,12 +198,46 @@ class SefariaMCPService:
             )
             raise RuntimeError(f"Sefaria MCP tool '{name}' failed: {exc}") from exc
         except Exception as exc:  # pragma: no cover - network failures
+            # Unwrap ExceptionGroup/BaseExceptionGroup (Python 3.11+) to surface root cause
+            inner_messages: List[str] = []
+            inner_types: List[str] = []
+            try:
+                exceptions_attr = getattr(exc, "exceptions", None)
+                if exceptions_attr and isinstance(exceptions_attr, list) and exceptions_attr:
+                    for sub in exceptions_attr:
+                        inner_types.append(type(sub).__name__)
+                        inner_messages.append(str(sub))
+                elif hasattr(exc, "__cause__") and exc.__cause__ is not None:
+                    inner_types.append(type(exc.__cause__).__name__)
+                    inner_messages.append(str(exc.__cause__))
+                elif hasattr(exc, "__context__") and exc.__context__ is not None:
+                    inner_types.append(type(exc.__context__).__name__)
+                    inner_messages.append(str(exc.__context__))
+            except Exception:
+                # Best-effort extraction only
+                pass
+
+            extra_details: Dict[str, Any] = {
+                "tool": name,
+                "arguments": cleaned_args,
+                "endpoint": self.endpoint,
+                "timeout_sec": self.timeout,
+            }
+            if inner_types or inner_messages:
+                extra_details["inner_exception_types"] = inner_types
+                extra_details["inner_exception_messages"] = inner_messages
+
             logger.error(
                 "Unexpected MCP error",
-                extra={"tool": name, "arguments": cleaned_args},
+                extra=extra_details,
                 exc_info=True,
             )
-            raise RuntimeError(f"Sefaria MCP tool '{name}' failed: {exc}") from exc
+            detail_suffix = ""
+            if inner_types or inner_messages:
+                detail_suffix = f" | inner={list(zip(inner_types, inner_messages))}"
+            raise RuntimeError(
+                f"Sefaria MCP tool '{name}' failed: {exc}{detail_suffix}"
+            ) from exc
 
         return self._normalise_result(result)
 
