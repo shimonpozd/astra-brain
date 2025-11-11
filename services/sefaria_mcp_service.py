@@ -297,23 +297,87 @@ class SefariaMCPService:
         return self._normalise_result(result)
 
     def _normalise_result(self, result: "CallToolResult") -> Dict[str, Any]:
-        """Extract structured data or fallback to raw text."""
-        if result.data is not None:
-            return {"data": result.data, "raw": None}
+        """Extract structured data or fallback to raw text.
 
-        text_fragments: List[str] = []
-        for block in result.content:
-            if mcp_types and isinstance(block, mcp_types.TextContent):
-                text_fragments.append(block.text)
-            elif hasattr(block, "text"):
-                text_fragments.append(getattr(block, "text"))
+        Be compatible with multiple fastmcp/mcp versions:
+        - Result objects with .data/.content
+        - Plain dicts with 'data' or 'content'
+        - Lists (either content blocks or already-structured data)
+        """
+        # Case 1: modern object with .data
+        if hasattr(result, "data"):
+            data = getattr(result, "data")
+            if data is not None:
+                return {"data": data, "raw": None}
 
-        raw_text = "\n".join(fragment for fragment in text_fragments if fragment).strip()
-        parsed: Any = None
-        if raw_text:
-            try:
-                parsed = json.loads(raw_text)
-            except (json.JSONDecodeError, TypeError):
-                parsed = None
+        # Helper to extract text from content-like iterables
+        def extract_text_blocks(blocks: List[Any]) -> List[str]:
+            texts: List[str] = []
+            for block in blocks:
+                if mcp_types and isinstance(block, mcp_types.TextContent):
+                    texts.append(block.text)
+                elif isinstance(block, dict) and "text" in block:
+                    # Some versions might return dict blocks
+                    text_val = block.get("text")
+                    if isinstance(text_val, str):
+                        texts.append(text_val)
+                elif hasattr(block, "text"):
+                    text_attr = getattr(block, "text", None)
+                    if isinstance(text_attr, str):
+                        texts.append(text_attr)
+                elif isinstance(block, str):
+                    texts.append(block)
+            return texts
 
-        return {"data": parsed, "raw": raw_text or None}
+        # Case 2: modern object with .content
+        if hasattr(result, "content"):
+            blocks = getattr(result, "content", None)
+            if isinstance(blocks, list):
+                text_fragments = extract_text_blocks(blocks)
+                raw_text = "\n".join(fragment for fragment in text_fragments if fragment).strip()
+                parsed: Any = None
+                if raw_text:
+                    try:
+                        parsed = json.loads(raw_text)
+                    except (json.JSONDecodeError, TypeError):
+                        parsed = None
+                return {"data": parsed, "raw": raw_text or None}
+
+        # Case 3: dict result
+        if isinstance(result, dict):
+            if "data" in result and result["data"] is not None:
+                return {"data": result["data"], "raw": None}
+            if "content" in result and isinstance(result["content"], list):
+                text_fragments = extract_text_blocks(result["content"])
+                raw_text = "\n".join(fragment for fragment in text_fragments if fragment).strip()
+                parsed: Any = None
+                if raw_text:
+                    try:
+                        parsed = json.loads(raw_text)
+                    except (json.JSONDecodeError, TypeError):
+                        parsed = None
+                return {"data": parsed, "raw": raw_text or None}
+            # Assume already-structured data payload
+            return {"data": result, "raw": None}
+
+        # Case 4: list result
+        if isinstance(result, list):
+            # If it looks like content blocks, try to extract text; otherwise, treat as data
+            text_fragments = extract_text_blocks(result)
+            if text_fragments:
+                raw_text = "\n".join(fragment for fragment in text_fragments if fragment).strip()
+                parsed: Any = None
+                if raw_text:
+                    try:
+                        parsed = json.loads(raw_text)
+                    except (json.JSONDecodeError, TypeError):
+                        parsed = None
+                return {"data": parsed, "raw": raw_text or None}
+            # Not text-like → assume it's already structured data
+            return {"data": result, "raw": None}
+
+        # Fallback: unknown type; provide stringified raw
+        try:
+            return {"data": None, "raw": str(result)}
+        except Exception:
+            return {"data": None, "raw": None}
