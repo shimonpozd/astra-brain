@@ -20,6 +20,14 @@ def verify_password(password: str, password_hash: str) -> bool:
     return pwd_context.verify(password, password_hash)
 
 
+def hash_token(value: str) -> str:
+    return pwd_context.hash(value, scheme="bcrypt_sha256")
+
+
+def verify_token(value: str, token_hash: str) -> bool:
+    return pwd_context.verify(value, token_hash)
+
+
 def create_access_token(
     data: Dict[str, Any],
     secret: str,

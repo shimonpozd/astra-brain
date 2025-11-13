@@ -136,13 +136,13 @@ async def _resolve_segments(
 ) -> List[Dict[str, Any]]:
     """Build the list of raw segments for the payload, applying fallbacks as needed."""
 
-    segments = _extract_segments(ref, data)
+    segments = _ensure_segment_order(_extract_segments(ref, data))
     parsed = parse_ref(ref)
 
     if _should_use_talmud_fallback(parsed, segments, data):
         fallback_segments = await _build_talmud_segments(ref, data, sefaria_service)
         if fallback_segments:
-            return fallback_segments
+            return _ensure_segment_order(fallback_segments)
 
     return segments
 
@@ -319,6 +319,55 @@ def _format_segments_for_daily(segments: List[Dict[str, Any]]) -> List[Dict[str,
             }
         )
     return formatted
+
+
+def _ensure_segment_order(segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if len(segments) < 2:
+        return segments
+
+    start_meta = segments[0].get("metadata", {})
+    end_meta = segments[-1].get("metadata", {})
+    start_key = _segment_position(start_meta)
+    end_key = _segment_position(end_meta)
+
+    if start_key is None or end_key is None:
+        return segments
+    if start_key > end_key:
+        return list(reversed(segments))
+    return segments
+
+
+def _segment_position(metadata: Dict[str, Any]) -> Optional[Tuple[int, int, int, int]]:
+    if not isinstance(metadata, dict):
+        return None
+
+    chapter = metadata.get("chapter")
+    if chapter is not None:
+        verse = metadata.get("verse")
+        return (_to_int(chapter), _to_int(verse), 0, 0)
+
+    page = metadata.get("page")
+    if page is not None:
+        amud = metadata.get("amud")
+        return (0, _to_int(page), _amud_index(amud), _to_int(metadata.get("segment")))
+
+    return None
+
+
+def _amud_index(amud: Any) -> int:
+    if not isinstance(amud, str):
+        return 0
+    cleaned = amud.strip().lower()
+    return 0 if cleaned.startswith("a") else 1
+
+
+def _to_int(value: Any, default: int = 0) -> int:
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _compose_segment_ref(base_ref: Optional[str], ordinal: int) -> str:

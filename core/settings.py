@@ -55,6 +55,31 @@ class Settings(BaseSettings):
                     'access_token_expires_minutes',
                     self.JWT_ACCESS_TOKEN_EXPIRES_MINUTES,
                 )
+                self.JWT_REFRESH_TOKEN_EXPIRES_DAYS = jwt_cfg.get(
+                    'refresh_token_expires_days',
+                    self.JWT_REFRESH_TOKEN_EXPIRES_DAYS,
+                )
+                refresh_cfg = jwt_cfg.get('refresh_cookie', {})
+                self.REFRESH_TOKEN_COOKIE_NAME = refresh_cfg.get(
+                    'name',
+                    self.REFRESH_TOKEN_COOKIE_NAME,
+                )
+                self.REFRESH_TOKEN_COOKIE_PATH = refresh_cfg.get(
+                    'path',
+                    self.REFRESH_TOKEN_COOKIE_PATH,
+                )
+                self.REFRESH_TOKEN_COOKIE_SAMESITE = refresh_cfg.get(
+                    'samesite',
+                    self.REFRESH_TOKEN_COOKIE_SAMESITE,
+                )
+                self.REFRESH_TOKEN_COOKIE_SECURE = refresh_cfg.get(
+                    'secure',
+                    self.REFRESH_TOKEN_COOKIE_SECURE,
+                )
+                self.REFRESH_TOKEN_COOKIE_HTTPONLY = refresh_cfg.get(
+                    'httponly',
+                    self.REFRESH_TOKEN_COOKIE_HTTPONLY,
+                )
 
             # Load Redis URL from brain_service.services
             if 'services' in config:
@@ -100,7 +125,13 @@ class Settings(BaseSettings):
         self.JWT_SECRET = "change-me"
         self.JWT_ALGORITHM = "HS256"
         self.JWT_ACCESS_TOKEN_EXPIRES_MINUTES = 60
+        self.JWT_REFRESH_TOKEN_EXPIRES_DAYS = 30
         self.API_KEY_SECRET = "change-me-api-key-secret"
+        self.REFRESH_TOKEN_COOKIE_NAME = "astra_refresh_token"
+        self.REFRESH_TOKEN_COOKIE_PATH = "/api"
+        self.REFRESH_TOKEN_COOKIE_SAMESITE = "lax"
+        self.REFRESH_TOKEN_COOKIE_SECURE = True
+        self.REFRESH_TOKEN_COOKIE_HTTPONLY = True
 
     # Default values (will be overridden by TOML config)
     BRAIN_PORT: int = 7030
@@ -138,3 +169,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRES_MINUTES: int = 60
     API_KEY_SECRET: str = "change-me-api-key-secret"
+    JWT_REFRESH_TOKEN_EXPIRES_DAYS: int = 30
+    REFRESH_TOKEN_COOKIE_NAME: str = "astra_refresh_token"
+    REFRESH_TOKEN_COOKIE_PATH: str = "/api"
+    REFRESH_TOKEN_COOKIE_SAMESITE: str = "lax"
+    REFRESH_TOKEN_COOKIE_SECURE: bool = True
+    REFRESH_TOKEN_COOKIE_HTTPONLY: bool = True

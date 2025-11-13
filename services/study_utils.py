@@ -1654,63 +1654,80 @@ async def get_full_daily_text(ref: str, sefaria_service: SefariaService, index_s
                         all_segments_data.append(segment_data)
                         current_verse += 1
                         
-            elif ":" not in base_ref and " " in base_ref:
-                # Single chapter like "Genesis 25" or "Mishneh Torah, Creditor and Debtor 12"
-                book_chapter = base_ref  # "Genesis 25" or "Mishneh Torah, Creditor and Debtor 12"
-                
-                # Check if this is Mishneh Torah (needs special handling)
-                if "Mishneh Torah" in base_ref:
-                    logger.info(f"[daily] DETECTED MISHNEH TORAH: {base_ref}")
-                    # For Mishneh Torah, try to fetch individual halakhot (sub-chapters)
-                    # Extract the chapter number
-                    chapter_num = base_ref.split()[-1]  # "12"
-                    book_part = " ".join(base_ref.split()[:-1])  # "Mishneh Torah, Creditor and Debtor"
+                elif ":" not in base_ref and " " in base_ref:
+                    # Single chapter like "Genesis 25" or "Mishneh Torah, Creditor and Debtor 12"
+                    book_chapter = base_ref  # "Genesis 25" or "Mishneh Torah, Creditor and Debtor 12"
                     
-                    # Try to fetch individual halakhot (1, 2, 3, etc.)
-                    for halakha_num in range(1, 20):  # Try up to 20 halakhot
-                        halakha_ref = f"{book_part} {chapter_num}:{halakha_num}"
-                        try:
-                            halakha_result = await sefaria_service.get_text(halakha_ref)
-                            if halakha_result.get("ok") and halakha_result.get("data"):
-                                halakha_data = halakha_result["data"]
-                                en_text = halakha_data.get("text", "")
-                                he_text = halakha_data.get("he", "")
-                                
-                                if en_text or he_text:  # Only add if we got content
-                                    segment_data = {
-                                        "ref": halakha_ref,
-                                        "en_text": en_text,
-                                        "he_text": _extract_hebrew_text(he_text),
-                                        "title": data.get("title", ref),
-                                        "indexTitle": data.get("indexTitle", data.get("book", "")),
-                                        "heRef": halakha_data.get("heRef", "")
-                                    }
-                                    all_segments_data.append(segment_data)
-                                    logger.info(f"[daily] MISHNEH TORAH HALAKHA: {halakha_ref}, en_len={len(en_text)}, he_len={len(he_text) if he_text else 0}")
-                                else:
-                                    logger.info(f"[daily] MISHNEH TORAH HALAKHA EMPTY: {halakha_ref}")
-                            else:
-                                logger.info(f"[daily] MISHNEH TORAH HALAKHA NOT FOUND: {halakha_ref}")
-                                break  # Stop if we can't find more halakhot
-                        except Exception as e:
-                            logger.error(f"[daily] ERROR FETCHING MISHNEH TORAH HALAKHA {halakha_ref}: {str(e)}")
-                            break
-                else:
-                    # Regular chapter segmentation (like Genesis 25)
-                    for i, (en_text, he_text) in enumerate(zip(text_data, he_data)):
-                        verse_num = i + 1
-                        segment_ref = f"{book_chapter}:{verse_num}"
+                    # Check if this is Mishneh Torah (needs special handling)
+                    if "Mishneh Torah" in base_ref:
+                        logger.info(f"[daily] DETECTED MISHNEH TORAH: {base_ref}")
+                        # For Mishneh Torah, try to fetch individual halakhot (sub-chapters)
+                        # Extract the chapter number
+                        chapter_num = base_ref.split()[-1]  # "12"
+                        book_part = " ".join(base_ref.split()[:-1])  # "Mishneh Torah, Creditor and Debtor"
                         
-                        segment_data = {
-                            "ref": segment_ref,
-                            "en_text": en_text,
-                            "he_text": _extract_hebrew_text(he_text),
-                            "title": data.get("title", ref),
-                            "indexTitle": data.get("indexTitle", data.get("book", "")),
-                            "heRef": data.get("heRef", "")
-                        }
-                        all_segments_data.append(segment_data)
-                    logger.info(f"[daily] CHAPTER SEGMENT: {segment_ref}")
+                        # Try to fetch individual halakhot (1, 2, 3, etc.)
+                        for halakha_num in range(1, 20):  # Try up to 20 halakhot
+                            halakha_ref = f"{book_part} {chapter_num}:{halakha_num}"
+                            try:
+                                halakha_result = await sefaria_service.get_text(halakha_ref)
+                                if halakha_result.get("ok") and halakha_result.get("data"):
+                                    halakha_data = halakha_result["data"]
+                                    en_text = halakha_data.get("text", "")
+                                    he_text = halakha_data.get("he", "")
+                                    
+                                    if en_text or he_text:  # Only add if we got content
+                                        segment_data = {
+                                            "ref": halakha_ref,
+                                            "en_text": en_text,
+                                            "he_text": _extract_hebrew_text(he_text),
+                                            "title": data.get("title", ref),
+                                            "indexTitle": data.get("indexTitle", data.get("book", "")),
+                                            "heRef": halakha_data.get("heRef", "")
+                                        }
+                                        all_segments_data.append(segment_data)
+                                        logger.info(f"[daily] MISHNEH TORAH HALAKHA: {halakha_ref}, en_len={len(en_text)}, he_len={len(he_text) if he_text else 0}")
+                                    else:
+                                        logger.info(f"[daily] MISHNEH TORAH HALAKHA EMPTY: {halakha_ref}")
+                                else:
+                                    logger.info(f"[daily] MISHNEH TORAH HALAKHA NOT FOUND: {halakha_ref}")
+                                break  # Stop if we can't find more halakhot
+                            except Exception as e:
+                                logger.error(f"[daily] ERROR FETCHING MISHNEH TORAH HALAKHA {halakha_ref}: {str(e)}")
+                                break
+
+                        if not all_segments_data and isinstance(text_data, list) and text_data:
+                            logger.info(f"[daily] MISHNEH TORAH FALLBACK: using chapter list segmentation for {base_ref}")
+                            for i, (en_text, he_text) in enumerate(zip_longest(text_data, he_data or [], fillvalue="")):
+                                if not en_text and not he_text:
+                                    continue
+                                verse_num = i + 1
+                                segment_ref = f"{book_part}:{verse_num}"
+                                segment_data = {
+                                    "ref": segment_ref,
+                                    "en_text": en_text or "",
+                                    "he_text": _extract_hebrew_text(he_text),
+                                    "title": data.get("title", ref),
+                                    "indexTitle": data.get("indexTitle", data.get("book", "")),
+                                    "heRef": data.get("heRef", "")
+                                }
+                                all_segments_data.append(segment_data)
+                    else:
+                        # Regular chapter segmentation (like Genesis 25)
+                        for i, (en_text, he_text) in enumerate(zip(text_data, he_data)):
+                            verse_num = i + 1
+                            segment_ref = f"{book_chapter}:{verse_num}"
+                            
+                            segment_data = {
+                                "ref": segment_ref,
+                                "en_text": en_text,
+                                "he_text": _extract_hebrew_text(he_text),
+                                "title": data.get("title", ref),
+                                "indexTitle": data.get("indexTitle", data.get("book", "")),
+                                "heRef": data.get("heRef", "")
+                            }
+                            all_segments_data.append(segment_data)
+                        logger.info(f"[daily] CHAPTER SEGMENT: {segment_ref}")
                     
             else:
                 # Fallback: use original ref for all segments

@@ -10,9 +10,19 @@ from brain_service.services.user_service import (
     UserNotFoundError,
     UserService,
 )
-from brain_service.models.db import User, UserApiKey
+from brain_service.models.db import User, UserApiKey, UserSession, UserLoginEvent
 
 router = APIRouter()
+
+
+def _parse_uuid(value: str, name: str = "identifier") -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid {name}",
+        )
 
 
 class UserApiKeyResponse(BaseModel):
@@ -48,13 +58,19 @@ class UserResponse(BaseModel):
     created_at: str
     updated_at: str
     last_login_at: Optional[str]
+    phone_number: Optional[str]
     api_keys: List[UserApiKeyResponse]
+    active_session_count: int
+    total_session_count: int
 
     @classmethod
     def from_model(
         cls,
         user: User,
         api_keys: Optional[List[UserApiKey]] = None,
+        *,
+        active_session_count: int = 0,
+        total_session_count: int = 0,
     ) -> "UserResponse":
         key_models = api_keys if api_keys is not None else getattr(user, "api_keys", [])
         key_responses = [UserApiKeyResponse.from_model(key) for key in key_models]
@@ -67,7 +83,56 @@ class UserResponse(BaseModel):
             created_at=user.created_at.isoformat(),
             updated_at=user.updated_at.isoformat(),
             last_login_at=user.last_login_at.isoformat() if user.last_login_at else None,
+            phone_number=user.phone_number,
             api_keys=key_responses,
+            active_session_count=active_session_count,
+            total_session_count=total_session_count,
+        )
+
+
+class UserSessionResponse(BaseModel):
+    id: str
+    ip_address: Optional[str]
+    user_agent: Optional[str]
+    is_active: bool
+    created_at: str
+    updated_at: str
+    last_used_at: Optional[str]
+    expires_at: str
+
+    @classmethod
+    def from_model(cls, session: UserSession) -> "UserSessionResponse":
+        return cls(
+            id=str(session.id),
+            ip_address=session.ip_address,
+            user_agent=session.user_agent,
+            is_active=session.is_active,
+            created_at=session.created_at.isoformat(),
+            updated_at=session.updated_at.isoformat(),
+            last_used_at=session.last_used_at.isoformat() if session.last_used_at else None,
+            expires_at=session.expires_at.isoformat(),
+        )
+
+
+class UserLoginEventResponse(BaseModel):
+    id: str
+    username: Optional[str]
+    success: bool
+    reason: Optional[str]
+    ip_address: Optional[str]
+    user_agent: Optional[str]
+    created_at: str
+
+    @classmethod
+    def from_model(cls, event: UserLoginEvent) -> "UserLoginEventResponse":
+        return cls(
+            id=str(event.id),
+            username=event.username,
+            success=event.success,
+            reason=event.reason,
+            ip_address=event.ip_address,
+            user_agent=event.user_agent,
+            created_at=event.created_at.isoformat(),
         )
 
 
@@ -77,12 +142,14 @@ class CreateUserRequest(BaseModel):
     role: Literal["admin", "member"] = "member"
     is_active: bool = True
     created_manually: bool = True
+    phone_number: Optional[str] = None
 
 
 class UpdateUserRequest(BaseModel):
     password: Optional[str] = None
     role: Optional[Literal["admin", "member"]] = None
     is_active: Optional[bool] = None
+    phone_number: Optional[str] = None
 
 
 class CreateApiKeyRequest(BaseModel):
@@ -105,7 +172,16 @@ async def list_users(
     responses: List[UserResponse] = []
     for user in users:
         keys = await user_service.list_api_keys(user.id)
-        responses.append(UserResponse.from_model(user, keys))
+        sessions = await user_service.list_sessions_for_user(user.id)
+        active_sessions = sum(1 for session in sessions if session.is_active)
+        responses.append(
+            UserResponse.from_model(
+                user,
+                keys,
+                active_session_count=active_sessions,
+                total_session_count=len(sessions),
+            )
+        )
     return responses
 
 
@@ -122,6 +198,7 @@ async def create_user(
             role=request.role,
             is_active=request.is_active,
             created_manually=request.created_manually,
+            phone_number=request.phone_number,
         )
     except UserAlreadyExistsError:
         raise HTTPException(
@@ -154,6 +231,7 @@ async def update_user(
         password=request.password,
         role=request.role,
         is_active=request.is_active,
+        phone_number=request.phone_number,
     )
     keys = await user_service.list_api_keys(updated.id)
     return UserResponse.from_model(updated, keys)
@@ -263,3 +341,54 @@ async def delete_user_api_key(
 
     await user_service.delete_api_key(key_uuid)
     return None
+
+
+@router.get("/users/{user_id}/sessions", response_model=List[UserSessionResponse])
+async def list_user_sessions(
+    user_id: str,
+    _: User = Depends(require_admin_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    user_uuid = _parse_uuid(user_id, "user id")
+    user = await user_service.get_user_by_id(user_uuid)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    sessions = await user_service.list_sessions_for_user(user_uuid)
+    return [UserSessionResponse.from_model(session) for session in sessions]
+
+
+@router.delete(
+    "/users/{user_id}/sessions/{session_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def revoke_user_session(
+    user_id: str,
+    session_id: str,
+    _: User = Depends(require_admin_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    user_uuid = _parse_uuid(user_id, "user id")
+    session_uuid = _parse_uuid(session_id, "session id")
+    user = await user_service.get_user_by_id(user_uuid)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    session = await user_service.get_session_by_id(session_uuid)
+    if not session or session.user_id != user_uuid:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    await user_service.revoke_session(session_uuid)
+    return None
+
+
+@router.get("/users/{user_id}/login-events", response_model=List[UserLoginEventResponse])
+async def list_user_login_events(
+    user_id: str,
+    limit: int = 20,
+    _: User = Depends(require_admin_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    user_uuid = _parse_uuid(user_id, "user id")
+    user = await user_service.get_user_by_id(user_uuid)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    events = await user_service.list_login_events(user_uuid, limit=limit)
+    return [UserLoginEventResponse.from_model(event) for event in events]

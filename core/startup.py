@@ -61,6 +61,71 @@ async def lifespan(app: FastAPI):
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ NULL"
             )
         )
+        await conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(32)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_phone_number ON users (phone_number) WHERE phone_number IS NOT NULL"
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS user_sessions (
+                    id UUID PRIMARY KEY,
+                    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    refresh_token_hash TEXT NOT NULL,
+                    ip_address VARCHAR(64),
+                    user_agent VARCHAR(512),
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    last_used_at TIMESTAMPTZ,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_user_sessions_user_id ON user_sessions (user_id)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_user_sessions_expires_at ON user_sessions (expires_at)"
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS user_login_events (
+                    id UUID PRIMARY KEY,
+                    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                    username VARCHAR(64),
+                    success BOOLEAN NOT NULL DEFAULT FALSE,
+                    ip_address VARCHAR(64),
+                    user_agent VARCHAR(512),
+                    reason VARCHAR(128),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_user_login_events_user_id ON user_login_events (user_id)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_user_login_events_created_at ON user_login_events (created_at)"
+            )
+        )
     app.state.user_service = UserService(
         app.state.db_session_factory, encryption_secret=settings.API_KEY_SECRET
     )
@@ -69,6 +134,7 @@ async def lifespan(app: FastAPI):
         jwt_secret=settings.JWT_SECRET,
         jwt_algorithm=settings.JWT_ALGORITHM,
         jwt_expires_minutes=settings.JWT_ACCESS_TOKEN_EXPIRES_MINUTES,
+        refresh_token_expires_days=settings.JWT_REFRESH_TOKEN_EXPIRES_DAYS,
     )
 
     if not await app.state.user_service.has_admin():

@@ -1,6 +1,7 @@
 from fastapi import Depends, Header, HTTPException, Request, status
 import redis.asyncio as redis
 
+from .settings import Settings
 from brain_service.models.db import User
 from brain_service.services.auth_service import AuthService
 from brain_service.services.user_service import UserService
@@ -101,6 +102,10 @@ def require_admin_user(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
     return current_user
+
+
+def get_settings(request: Request) -> Settings:
+    return request.app.state.settings
 
 
 def require_admin_token(request: Request, x_admin_token: str = Header(None)):

@@ -4,13 +4,30 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from brain_service.core.security import hash_password, verify_password
-from brain_service.models.db import ChatThread, User, UserApiKey
+from brain_service.models.db import (
+    ChatThread,
+    User,
+    UserApiKey,
+    UserSession,
+    UserLoginEvent,
+)
 from brain_service.utils.crypto import decrypt_value, encrypt_value, EncryptionError
+
+
+def _normalize_username(value: str) -> str:
+    return value.strip().lower()
+
+
+def _normalize_phone(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    normalized = "".join(ch for ch in value if ch.isdigit() or ch == "+")
+    return normalized or None
 
 
 class UserAlreadyExistsError(Exception):
@@ -37,15 +54,28 @@ class UserService:
         role: str = "member",
         is_active: bool = True,
         created_manually: bool = False,
+        *,
+        phone_number: Optional[str] = None,
     ) -> User:
+        normalized_username = _normalize_username(username)
+        normalized_phone = _normalize_phone(phone_number)
+
         async with self._session_factory() as session:
             async with session.begin():
+                if normalized_phone:
+                    existing = await session.scalars(
+                        select(User).where(User.phone_number == normalized_phone)
+                    )
+                    if existing.first():
+                        raise UserAlreadyExistsError(normalized_phone)
+
                 user = User(
-                    username=username.lower(),
+                    username=normalized_username,
                     password_hash=hash_password(password),
                     role=role,
                     is_active=is_active,
                     created_manually=created_manually,
+                    phone_number=normalized_phone,
                 )
                 session.add(user)
                 try:
@@ -62,6 +92,7 @@ class UserService:
         password: Optional[str] = None,
         role: Optional[str] = None,
         is_active: Optional[bool] = None,
+        phone_number: Optional[str] = None,
     ) -> User:
         async with self._session_factory() as session:
             async with session.begin():
@@ -78,7 +109,18 @@ class UserService:
                     user.role = role
                 if is_active is not None:
                     user.is_active = is_active
-
+                if phone_number is not None:
+                    normalized_phone = _normalize_phone(phone_number)
+                    if (
+                        normalized_phone
+                        and normalized_phone != user.phone_number
+                    ):
+                        existing = await session.scalars(
+                            select(User).where(User.phone_number == normalized_phone)
+                        )
+                        if existing.first():
+                            raise UserAlreadyExistsError(normalized_phone)
+                    user.phone_number = normalized_phone
                 await session.flush()
                 await session.refresh(user)
                 return user
@@ -95,6 +137,16 @@ class UserService:
             )
             return result.first()
 
+    async def get_user_by_phone(self, phone_number: str) -> Optional[User]:
+        normalized_phone = _normalize_phone(phone_number)
+        if not normalized_phone:
+            return None
+        async with self._session_factory() as session:
+            result = await session.scalars(
+                select(User).where(User.phone_number == normalized_phone)
+            )
+            return result.first()
+
     async def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         async with self._session_factory() as session:
             result = await session.scalars(
@@ -102,13 +154,46 @@ class UserService:
             )
             return result.first()
 
-    async def authenticate(self, username: str, password: str) -> Optional[User]:
-        user = await self.get_user_by_username(username)
-        if not user or not user.is_active:
+    async def authenticate(
+        self,
+        identifier: str,
+        password: str,
+        *,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Optional[User]:
+        normalized_identifier = identifier.strip()
+        user = await self.get_user_by_username(normalized_identifier)
+        if not user:
+            user = await self.get_user_by_phone(normalized_identifier)
+
+        reason = None
+        if not user:
+            reason = "user_not_found"
+        elif not user.is_active:
+            reason = "user_inactive"
+        elif not verify_password(password, user.password_hash):
+            reason = "invalid_password"
+
+        if reason:
+            await self.record_login_event(
+                user_id=user.id if user else None,
+                username=normalized_identifier,
+                success=False,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                reason=reason,
+            )
             return None
-        if not verify_password(password, user.password_hash):
-            return None
+
         await self._record_login(user.id)
+        await self.record_login_event(
+            user_id=user.id,
+            username=normalized_identifier,
+            success=True,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
         return user
 
     async def has_admin(self) -> bool:
@@ -345,9 +430,131 @@ class UserService:
                 key.usage_today = 0
                 key.last_reset_at = now
 
+    async def create_session(
+        self,
+        user_id: uuid.UUID,
+        *,
+        refresh_token_hash: str,
+        expires_at: datetime,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> UserSession:
+        async with self._session_factory() as session:
+            async with session.begin():
+                session_obj = UserSession(
+                    user_id=user_id,
+                    refresh_token_hash=refresh_token_hash,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    expires_at=expires_at,
+                    last_used_at=datetime.now(timezone.utc),
+                    is_active=True,
+                )
+                session.add(session_obj)
+                await session.flush()
+                await session.refresh(session_obj)
+                return session_obj
+
+    async def update_session(
+        self,
+        session_id: uuid.UUID,
+        *,
+        refresh_token_hash: str,
+        expires_at: datetime,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Optional[UserSession]:
+        async with self._session_factory() as session:
+            async with session.begin():
+                session_obj = await session.get(UserSession, session_id)
+                if not session_obj:
+                    return None
+                session_obj.refresh_token_hash = refresh_token_hash
+                session_obj.expires_at = expires_at
+                session_obj.last_used_at = datetime.now(timezone.utc)
+                session_obj.is_active = True
+                if ip_address is not None:
+                    session_obj.ip_address = ip_address
+                if user_agent is not None:
+                    session_obj.user_agent = user_agent
+                await session.flush()
+                await session.refresh(session_obj)
+                return session_obj
+
+    async def get_session_by_id(self, session_id: uuid.UUID) -> Optional[UserSession]:
+        async with self._session_factory() as session:
+            return await session.get(UserSession, session_id)
+
+    async def list_sessions_for_user(self, user_id: uuid.UUID) -> list[UserSession]:
+        async with self._session_factory() as session:
+            result = await session.scalars(
+                select(UserSession)
+                .where(UserSession.user_id == user_id)
+                .order_by(UserSession.created_at.desc())
+            )
+            return list(result)
+
+    async def count_active_sessions(self, user_id: uuid.UUID) -> int:
+        async with self._session_factory() as session:
+            result = await session.scalar(
+                select(func.count())
+                .select_from(UserSession)
+                .where(
+                    UserSession.user_id == user_id,
+                    UserSession.is_active.is_(True),
+                )
+            )
+            return int(result or 0)
+
+    async def revoke_session(self, session_id: uuid.UUID) -> None:
+        async with self._session_factory() as session:
+            async with session.begin():
+                session_obj = await session.get(UserSession, session_id)
+                if session_obj:
+                    session_obj.is_active = False
+
+    async def list_login_events(
+        self,
+        user_id: uuid.UUID,
+        limit: int = 20,
+    ) -> list[UserLoginEvent]:
+        async with self._session_factory() as session:
+            result = await session.scalars(
+                select(UserLoginEvent)
+                .where(UserLoginEvent.user_id == user_id)
+                .order_by(UserLoginEvent.created_at.desc())
+                .limit(limit)
+            )
+            return list(result)
+
     async def _record_login(self, user_id: uuid.UUID) -> None:
         async with self._session_factory() as session:
             async with session.begin():
                 user = await session.get(User, user_id)
                 if user:
                     user.last_login_at = datetime.now(timezone.utc)
+
+    async def record_login_event(
+        self,
+        *,
+        user_id: Optional[uuid.UUID],
+        username: Optional[str],
+        success: bool,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        reason: Optional[str] = None,
+    ) -> UserLoginEvent:
+        async with self._session_factory() as session:
+            async with session.begin():
+                event = UserLoginEvent(
+                    user_id=user_id,
+                    username=username,
+                    success=success,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    reason=reason,
+                )
+                session.add(event)
+                await session.flush()
+                await session.refresh(event)
+                return event

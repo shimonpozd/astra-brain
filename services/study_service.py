@@ -320,7 +320,7 @@ class StudyService:
                                 "indexTitle": segment.get("metadata", {}).get("indexTitle", ""),
                                 "heRef": segment.get("metadata", {}).get("heRef", "")
                             }
-                            await self.redis_client.lpush(segments_key, json.dumps(segment_data, ensure_ascii=False))
+                            await self.redis_client.rpush(segments_key, json.dumps(segment_data, ensure_ascii=False))
                         
                         # Save total segments count
                         total_segments = len(segments)

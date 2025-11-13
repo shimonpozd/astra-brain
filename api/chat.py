@@ -1,5 +1,7 @@
+import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -20,6 +22,106 @@ from brain_service.services.study.tz_utils import now_in_tz, resolve_timezone, s
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+CATALOG_PATH = Path(__file__).resolve().parents[2] / 'astra-web-client/public/sefaria-cache/catalog.json'
+
+
+def _load_catalog_works() -> list[dict]:
+    try:
+        with CATALOG_PATH.open('r', encoding='utf-8') as catalog_file:
+            payload = json.load(catalog_file)
+        works = payload.get('works')
+        if isinstance(works, list):
+            return works
+        return []
+    except FileNotFoundError:
+        logger.warning("Daily catalog missing at %s", CATALOG_PATH)
+        return []
+    except Exception as exc:
+        logger.warning("Failed to read daily catalog %s: %s", CATALOG_PATH, exc)
+        return []
+
+
+class _CatalogReferenceTranslator:
+    def __init__(self, works: list[dict]):
+        entries: list[tuple[str, str, str]] = []
+        seen: set[str] = set()
+        for work in works:
+            seed_short = work.get('seedShorts') or {}
+            short_ru = seed_short.get('short_ru')
+            if not short_ru:
+                continue
+            candidates = []
+            short_en = seed_short.get('short_en')
+            if short_en:
+                candidates.append(short_en)
+            title = work.get('title')
+            if title:
+                candidates.append(title)
+            for candidate in candidates:
+                normalized = (candidate or '').strip()
+                if not normalized:
+                    continue
+                normalized_lower = normalized.lower()
+                if normalized_lower in seen:
+                    continue
+                seen.add(normalized_lower)
+                entries.append((normalized, normalized_lower, short_ru))
+        self.entries = sorted(entries, key=lambda item: len(item[0]), reverse=True)
+
+    def translate(self, text: str) -> str:
+        candidate = (text or '').strip()
+        if not candidate or not self.entries:
+            return candidate
+        lowered = candidate.lower()
+        for english, english_lower, russian in self.entries:
+            if lowered.startswith(english_lower):
+                suffix = candidate[len(english):]
+                return f"{russian}{suffix}"
+        return candidate
+
+
+CATALOG_TRANSLATOR = _CatalogReferenceTranslator(_load_catalog_works())
+
+TITLE_TRANSLATIONS = {
+    'Parashat Hashavua': 'Недельная глава',
+    'Haftarah': 'Афтара',
+    'Daf Yomi': 'Даф йоми',
+    'Daily Mishnah': 'Мишна йомит',
+    'Daily Rambam': 'Рамбам',
+    'Daf a Week': 'Даф за неделю',
+    'Halakhah Yomit': 'Галаха йомит',
+    'Arukh HaShulchan Yomi': 'Арух а-Шульхан йоми',
+    'Tanakh Yomi': 'Танах йоми',
+    'Chok LeYisrael': 'Хок ле-Исраэль',
+    'Tanya Yomi': 'Танья йоми',
+    'Yerushalmi Yomi': 'Йерушалми йоми',
+    '929': '929',
+}
+SUFFIX_TRANSLATIONS = {
+    '(3 Chapters)': '(3 главы)',
+}
+
+def _translate_daily_title(title_en: str) -> str:
+    if not title_en:
+        return ''
+    normalized = title_en.strip()
+    for english_key, russian_value in TITLE_TRANSLATIONS.items():
+        if normalized == english_key:
+            return russian_value
+        if normalized.startswith(english_key):
+            suffix = normalized[len(english_key):].strip()
+            if suffix:
+                suffix = SUFFIX_TRANSLATIONS.get(suffix, suffix)
+                return f"{russian_value} {suffix}"
+            return russian_value
+    return normalized
+
+
+def _translate_catalog_reference(value: Optional[str]) -> str:
+    if not value:
+        return ''
+    return CATALOG_TRANSLATOR.translate(value)
 
 # --- Models ---
 class ChatRequest(BaseModel):
@@ -166,6 +268,9 @@ async def get_daily_calendar(
         for idx, item in enumerate(calendar_data.get("calendar_items", [])):
             title_en = item.get("title", {}).get("en", "")
             ref = item.get("ref")
+            display_values = item.get("displayValue") or {}
+            display_value_en = display_values.get("en") or ref or ""
+            display_value_ru = display_values.get("ru") or _translate_catalog_reference(display_value_en)
 
             logger.info(f"?? ITEM #{idx+1}: title={title_en!r}, ref={ref!r}, has_ref={bool(ref)}")
 
@@ -189,9 +294,11 @@ async def get_daily_calendar(
             virtual_chats.append({
                 "session_id": session_id,
                 "title": title_en,
+                "title_ru": _translate_daily_title(title_en),
                 "he_title": item.get("title", {}).get("he", ""),
-                "display_value": item.get("displayValue", {}).get("en", ""),
-                "he_display_value": item.get("displayValue", {}).get("he", ""),
+                "display_value": display_value_en,
+                "he_display_value": display_values.get("he", ""),
+                "display_value_ru": display_value_ru,
                 "ref": unit_ref,
                 "category": item.get("category", ""),
                 "order": item.get("order", 0),
