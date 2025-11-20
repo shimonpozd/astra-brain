@@ -32,6 +32,8 @@ logs/
 
 # --- Данные/модели/тяжёлые артефакты
 data/
+!data/
+!data/**/*.py
 datasets/
 checkpoints/
 **/*.onnx
