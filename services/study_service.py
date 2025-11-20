@@ -4,6 +4,8 @@ import asyncio
 from datetime import datetime
 from typing import List, Dict, Any, Optional, AsyncGenerator, Mapping
 from collections import defaultdict
+from urllib.parse import unquote
+import re
 
 import redis.asyncio as redis
 from brain_service.models.study_models import (
@@ -205,6 +207,9 @@ class StudyService:
     async def set_focus(self, request: StudySetFocusRequest, user_id: str) -> StudyStateResponse:
         """Set focus on a specific reference and update study state."""
         await self._ensure_session_owner(request.session_id, user_id)
+        request.ref = self._coerce_ref_slug(request.ref) or request.ref
+        if request.focus_ref:
+            request.focus_ref = self._coerce_ref_slug(request.focus_ref) or request.focus_ref
         logger.info(f"🔥 SET_FOCUS REQUEST: session_id='{request.session_id}', ref='{request.ref}', window_size={request.window_size}")
         try:
             # Check if this is a daily session - use explicit flag
@@ -540,6 +545,8 @@ class StudyService:
         if not current_snapshot:
             return StudyStateResponse(ok=False, error="No current study state found")
 
+        normalized_ref = self._coerce_ref_slug(request.ref) if request.ref else None
+
         if not request.ref:
             # Clear the specified slot if ref is not provided
             if current_snapshot.workbench is None:
@@ -560,7 +567,7 @@ class StudyService:
         # First, try to find in current bookshelf
         if current_snapshot.bookshelf and current_snapshot.bookshelf.items:
             for item in current_snapshot.bookshelf.items:
-                if item.ref == request.ref:
+                if normalized_ref and item.ref == normalized_ref:
                     bookshelf_item = item
                     break
         
@@ -569,7 +576,7 @@ class StudyService:
             # Check if we have full text, if not load from Sefaria
             if not bookshelf_item.text_full or not bookshelf_item.heTextFull:
                 try:
-                    text_result = await self.sefaria_service.get_text(request.ref)
+                    text_result = await self.sefaria_service.get_text(normalized_ref or request.ref)
                     if text_result.get("ok") and text_result.get("data"):
                         data = text_result["data"]
                         en_text = data.get("en_text", "")
@@ -588,7 +595,7 @@ class StudyService:
         else:
             # If not in bookshelf, try to load from Sefaria
             try:
-                text_result = await self.sefaria_service.get_text(request.ref)
+                text_result = await self.sefaria_service.get_text(normalized_ref or request.ref)
                 if text_result.get("ok") and text_result.get("data"):
                     data = text_result["data"]
                     en_text = data.get("en_text", "")
@@ -596,7 +603,7 @@ class StudyService:
                     
                     # Create a new BookshelfItem
                     workbench_item = BookshelfItem(
-                        ref=request.ref,
+                        ref=normalized_ref or request.ref or "",
                         commentator="Unknown",
                         indexTitle="Unknown",
                         preview=he_text[:100] if he_text else "",
@@ -606,11 +613,11 @@ class StudyService:
                     logger.info(f"Created new workbench item for {request.ref}: en_text={len(en_text) if en_text else 0}, he_text={len(he_text) if he_text else 0}")
                 else:
                     # Fallback to just storing the ref
-                    workbench_item = request.ref
-                    logger.warning(f"No text data available for {request.ref}")
+                    workbench_item = normalized_ref or request.ref
+                    logger.warning(f"No text data available for {normalized_ref or request.ref}")
             except Exception as e:
-                logger.warning(f"Failed to load text for {request.ref}: {e}")
-                workbench_item = request.ref
+                logger.warning(f"Failed to load text for {normalized_ref or request.ref}: {e}")
+                workbench_item = normalized_ref or request.ref
 
         # Update workbench
         if not current_snapshot.workbench:
@@ -629,6 +636,7 @@ class StudyService:
         """Get bookshelf data for a reference."""
         if request.session_id:
             await self._ensure_session_owner(request.session_id, user_id)
+        request.ref = self._coerce_ref_slug(request.ref) or request.ref
         try:
             bookshelf_data = await get_bookshelf_for(
                 request.ref, 
@@ -667,6 +675,7 @@ class StudyService:
     async def set_chat_focus(self, request: StudyChatSetFocusRequest, user_id: str) -> StudyStateResponse:
         """Set focus for study chat."""
         await self._ensure_session_owner(request.session_id, user_id)
+        request.ref = self._coerce_ref_slug(request.ref) or request.ref
         current_snapshot = await get_current_snapshot(request.session_id, self.redis_client)
         if not current_snapshot:
             return StudyStateResponse(ok=False, error="No current study state found")
@@ -1072,6 +1081,36 @@ You can see what texts are currently open in the study interface. You have acces
         normalized = ' '.join(normalized.split())
         
         return normalized
+
+    def _coerce_ref_slug(self, ref: Optional[str]) -> Optional[str]:
+        """
+        Convert Sefaria-style URL refs (with underscores, percent-encoding and dot-separated segments)
+        into canonical text refs understood by the API.
+        """
+        if not ref or not isinstance(ref, str):
+            return ref
+
+        decoded = unquote(ref)
+        candidate = decoded
+
+        # Detect already-normal refs (contain spaces and colons or the word " on ")
+        if (" on " in candidate and ":" in candidate) or " " in candidate:
+            return candidate.strip()
+
+        # Replace underscores with spaces (Sefaria slug format)
+        candidate = candidate.replace("_", " ")
+
+        # Convert trailing dotted numeric segments (e.g. ".2.6.2") into colon separated sections
+        match = re.search(r'((?:\.\d+)+)$', candidate)
+        if match:
+            numeric_part = match.group(1)
+            numbers = [segment for segment in numeric_part.split(".") if segment.strip()]
+            tail = ":".join(numbers)
+            head = candidate[: -len(numeric_part)].strip()
+            if head and tail:
+                candidate = f"{head} {tail}"
+
+        return candidate.strip()
 
     async def _stream_llm_response(
         self, 

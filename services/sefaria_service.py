@@ -28,7 +28,7 @@ class SefariaService:
 
     async def get_text(self, tref: str, lang: str | None = None) -> Dict[str, Any]:
         # Request both Hebrew (source) and English (translation) versions
-        params = {"version": ["source", "translation"]}
+        params = {"version": ["source", "translation"], "context": 0, "pad": 0, "commentary": 0}
         if lang:
             params["lang"] = lang
 

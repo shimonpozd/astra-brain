@@ -92,8 +92,8 @@ async def normalize_tref(tref: str) -> str:
     s = re.sub(r"\s+", " ", s.strip())
     s = re.sub(r"\s+,", ",", s)
     s = re.sub(r",\s+", ", ", s)
-    s = re.sub(r"Shulchan Arukh", "Shulchan Aruch", s, flags=re.IGNORECASE)
-    s = re.sub(r"De’ah|De´ah|De`ah", "Deah", s, flags=re.IGNORECASE)
+    s = re.sub(r"Shulchan Aruch", "Shulchan Arukh", s, flags=re.IGNORECASE)
+    s = re.sub(r"Deah", "De'ah", s, flags=re.IGNORECASE)
     return s
 
 # --- Data Models and Structuring ---
