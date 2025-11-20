@@ -2,10 +2,15 @@ from fastapi import FastAPI
 import sys
 import os
 
-# Add the brain_service directory to Python path if not already there
+# Ensure both the package directory and its parent are importable when the file
+# is executed directly (e.g., python brain_service/main.py).
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
+
+project_root = os.path.dirname(current_dir)
+if project_root and project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from core.startup import lifespan
 from core.middleware import logging_middleware, setup_cors_middleware
