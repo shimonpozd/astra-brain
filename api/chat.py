@@ -1,8 +1,8 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
@@ -122,6 +122,183 @@ def _translate_catalog_reference(value: Optional[str]) -> str:
     if not value:
         return ''
     return CATALOG_TRANSLATOR.translate(value)
+
+
+# --- Gamification helpers ---
+
+def _progress_day_key(user_id: str, date_str: str) -> str:
+    return f"daily:progress:{user_id}:{date_str}"
+
+
+def _streak_best_key(user_id: str) -> str:
+    return f"daily:streak:best:{user_id}"
+
+
+WEEKLY_CATEGORIES = {"haftarah", "haftarah", "daf a week", "daf-a-week", "parashat hashavua", "parasha"}
+
+
+def _is_weekly_category(category: Optional[str]) -> bool:
+    if not category:
+        return False
+    return category.strip().lower() in WEEKLY_CATEGORIES
+
+
+def _weekly_key(user_id: str, week_id: str) -> str:
+    return f"daily:weekly:{user_id}:{week_id}"
+
+
+async def _load_day(redis_client, user_id: str, date_str: str) -> List[Dict[str, Any]]:
+    if not redis_client:
+        return []
+    raw = await redis_client.get(_progress_day_key(user_id, date_str))
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, list) else []
+    except json.JSONDecodeError:
+        return []
+
+
+async def _save_day(redis_client, user_id: str, date_str: str, entries: List[Dict[str, Any]]) -> None:
+    if not redis_client:
+        return
+    if entries:
+        await redis_client.set(
+            _progress_day_key(user_id, date_str),
+            json.dumps(entries, ensure_ascii=False),
+            ex=3600 * 24 * 400,
+        )
+    else:
+        await redis_client.delete(_progress_day_key(user_id, date_str))
+
+
+async def _record_completion(
+    redis_client,
+    user_id: str,
+    date_str: str,
+    session_id: str,
+    completed: bool,
+    *,
+    category: str | None = None,
+    category_label: str | None = None,
+    ref: str | None = None,
+    title: str | None = None,
+) -> None:
+    entries = await _load_day(redis_client, user_id, date_str)
+    entries = [entry for entry in entries if entry.get("session_id") != session_id]
+    if completed:
+        entries.append(
+            {
+                "session_id": session_id,
+                "category": category,
+                "category_label": category_label or category,
+                "ref": ref,
+                "title": title,
+                "ts": datetime.utcnow().isoformat(),
+            }
+        )
+    await _save_day(redis_client, user_id, date_str, entries)
+
+    if _is_weekly_category(category):
+        try:
+            week_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except Exception:
+            week_date = date.today()
+        iso = week_date.isocalendar()
+        week_id = f"{iso.year}-W{iso.week:02d}"
+        week_key = _weekly_key(user_id, week_id)
+        if not redis_client:
+            return
+        if completed:
+            await redis_client.set(
+                week_key,
+                json.dumps(
+                    {
+                        "session_id": session_id,
+                        "category": category,
+                        "category_label": category_label or category,
+                        "ref": ref,
+                        "title": title,
+                        "week": week_id,
+                    },
+                    ensure_ascii=False,
+                ),
+                ex=3600 * 24 * 400,
+            )
+        else:
+            await redis_client.delete(week_key)
+
+
+async def _compute_streak(redis_client, user_id: str, today_date: datetime.date) -> Dict[str, int]:
+    current = 0
+    best = 0
+
+    try:
+        if redis_client:
+            raw_best = await redis_client.get(_streak_best_key(user_id))
+            if raw_best:
+                best = int(raw_best)
+    except Exception:
+        best = 0
+
+    cursor = today_date
+    for _ in range(400):
+        day_entries = await _load_day(redis_client, user_id, cursor.strftime("%Y-%m-%d"))
+        if not day_entries:
+            break
+        current += 1
+        cursor = cursor - timedelta(days=1)
+
+    if current > best and redis_client:
+        try:
+            await redis_client.set(_streak_best_key(user_id), current, ex=3600 * 24 * 400)
+            best = current
+        except Exception:
+            pass
+
+    return {"current": current, "best": best}
+
+
+async def _load_progress_range(redis_client, user_id: str, today_date: datetime.date, days: int = 90) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+
+    for offset in range(days):
+        day = today_date - timedelta(days=offset)
+        date_str = day.strftime("%Y-%m-%d")
+        entries = await _load_day(redis_client, user_id, date_str)
+        items.append({"date": date_str, "entries": entries, "completed": bool(entries)})
+
+    # Overlay weekly completions onto a week anchor (ISO week end, Sunday)
+    if redis_client:
+        try:
+            max_weeks = max(1, days // 7 + 2)
+            for w_offset in range(max_weeks):
+                start_of_week = today_date - timedelta(days=today_date.isoweekday() - 1)
+                week_end = start_of_week - timedelta(days=7 * w_offset) + timedelta(days=6)
+                iso = week_end.isocalendar()
+                week_id = f"{iso.year}-W{iso.week:02d}"
+                raw = await redis_client.get(_weekly_key(user_id, week_id))
+                if not raw:
+                    continue
+                try:
+                    weekly_entry = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                anchor_str = week_end.strftime("%Y-%m-%d")
+                existing = next((item for item in items if item["date"] == anchor_str), None)
+                if existing:
+                    existing_entries = existing.get("entries") or []
+                    existing_entries.append({**weekly_entry, "weekly": True})
+                    existing["entries"] = existing_entries
+                    existing["completed"] = True
+                else:
+                    items.append({"date": anchor_str, "entries": [{**weekly_entry, "weekly": True}], "completed": True})
+        except Exception:
+            pass
+
+    items.sort(key=lambda x: x["date"], reverse=True)
+    return items
 
 # --- Models ---
 class ChatRequest(BaseModel):
@@ -267,16 +444,12 @@ async def get_daily_calendar(
 
         for idx, item in enumerate(calendar_data.get("calendar_items", [])):
             title_en = item.get("title", {}).get("en", "")
-            ref = item.get("ref")
+            ref = item.get("ref") or item.get("url") or ""
             display_values = item.get("displayValue") or {}
             display_value_en = display_values.get("en") or ref or ""
             display_value_ru = display_values.get("ru") or _translate_catalog_reference(display_value_en)
 
             logger.info(f"?? ITEM #{idx+1}: title={title_en!r}, ref={ref!r}, has_ref={bool(ref)}")
-
-            if not ref:
-                logger.warning(f"?? SKIPPING ITEM #{idx+1}: {title_en!r} - no ref")
-                continue
 
             slug = title_en.lower().replace(" ", "-").replace("(", "").replace(")", "")
             session_id = f"daily-{today_iso}-{slug}"
@@ -384,13 +557,18 @@ async def create_daily_session_lazy(
         unit_ref, meta = select_today_unit(target_item, tz=tz_obj, override_today=date_obj)
 
         # Create session data
+        title_en = target_item.get("title", {}).get("en", "")
+        title_ru = _translate_daily_title(title_en)
         session_data = {
             "ref": unit_ref,
             "date": date_str,
-            "title": target_item.get("title", {}).get("en", ""),
+            "title": title_en,
+            "title_ru": title_ru,
             "he_title": target_item.get("title", {}).get("he", ""),
             "display_value": target_item.get("displayValue", {}).get("en", ""),
+            "display_value_ru": _translate_catalog_reference(target_item.get("displayValue", {}).get("en", "")),
             "category": target_item.get("category", ""),
+            "category_label": title_ru or title_en,
             "order": target_item.get("order", 0),
             "completed": False,
             "created_at": datetime.now(tz_obj).isoformat(),
@@ -426,14 +604,27 @@ async def mark_daily_complete(
     session_id: str,
     completed: bool,
     session_service: SessionService = Depends(get_session_service),
+    redis_client = Depends(get_redis_client),
     current_user=Depends(get_current_user),
+    tz: Optional[str] = Query(None, description="IANA timezone, e.g. Europe/Amsterdam"),
 ):
     """Mark daily session as completed or uncompleted."""
     
     # Get existing session
     session = await session_service.get_session(str(current_user.id), session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Daily session not found")
+        # Try to lazily create from today's calendar snapshot for robustness
+        try:
+            tz_obj = resolve_timezone(tz, None)
+            today_dt = now_in_tz(tz_obj)
+            calendar_resp = await create_daily_session_lazy(session_id, tz=tz, session_service=session_service, current_user=current_user)  # type: ignore[arg-type]
+            session = await session_service.get_session(str(current_user.id), session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Daily session not found")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=404, detail="Daily session not found")
     
     # Update completed status
     session["completed"] = completed
@@ -442,7 +633,30 @@ async def mark_daily_complete(
     success = await session_service.save_session(str(current_user.id), session_id, session, "daily")
     
     if success:
-        return {"session_id": session_id, "completed": completed, "message": "Status updated"}
+        tz_obj = resolve_timezone(tz, None)
+        today_dt = now_in_tz(tz_obj)
+        date_str = today_dt.strftime("%Y-%m-%d")
+
+        await _record_completion(
+            redis_client,
+            str(current_user.id),
+            date_str,
+            session_id,
+            completed,
+            category=session.get("category"),
+            category_label=session.get("category_label") or session.get("title_ru") or session.get("title"),
+            ref=session.get("ref"),
+            title=session.get("title"),
+        )
+        streak = await _compute_streak(redis_client, str(current_user.id), today_dt.date())
+
+        return {
+            "session_id": session_id,
+            "completed": completed,
+            "date": date_str,
+            "streak": streak,
+            "message": "Status updated",
+        }
     else:
         raise HTTPException(status_code=500, detail="Failed to update session")
 
@@ -503,3 +717,25 @@ async def get_daily_segments(
     except Exception as e:
         logger.error(f"Failed to get daily segments for {session_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get segments: {str(e)}")
+
+
+@router.get("/daily/progress")
+async def get_daily_progress(
+    days: int = Query(90, ge=1, le=365),
+    tz: Optional[str] = Query(None, description="IANA timezone, e.g. Europe/Amsterdam"),
+    redis_client = Depends(get_redis_client),
+    current_user=Depends(get_current_user),
+):
+    """Return recent completion history and streaks for the authenticated user."""
+    tz_obj = resolve_timezone(tz, None)
+    today_dt = now_in_tz(tz_obj)
+    today_date = today_dt.date()
+
+    history = await _load_progress_range(redis_client, str(current_user.id), today_date, days)
+    streak = await _compute_streak(redis_client, str(current_user.id), today_date)
+
+    return {
+        "today": today_dt.strftime("%Y-%m-%d"),
+        "streak": streak,
+        "history": history,
+    }

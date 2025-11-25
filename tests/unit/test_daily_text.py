@@ -1,7 +1,12 @@
 import types
 import sys
+from pathlib import Path
 
 import pytest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from brain_service.services.study.daily_text import build_full_daily_text
 
@@ -238,3 +243,33 @@ async def test_build_full_daily_text_flattens_nested_text_segments(monkeypatch: 
         "Genesis 12:3",
         "Genesis 12:4",
     ]
+
+
+@pytest.mark.anyio
+async def test_get_full_daily_text_short_end_same_chapter(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure end refs like '...12:1-2' resolve within the same chapter."""
+    from brain_service.services import study_utils
+
+    async def fake_try_load_range(_service, _ref):
+        return None
+
+    seen = {}
+
+    async def fake_same_chapter(ref, start_info, end_info, *_args, **_kwargs):
+        seen["start"] = start_info
+        seen["end"] = end_info
+        return {"ref": ref, "segments": [{"ref": "ok"}], "focusIndex": 0, "he_ref": None}
+
+    monkeypatch.setattr(study_utils, "_try_load_range", fake_try_load_range)
+    monkeypatch.setattr(study_utils, "_handle_same_chapter_range", fake_same_chapter)
+
+    payload = await study_utils.get_full_daily_text(
+        "Mishnah Chullin 12:1-2",
+        object(),  # sefaria_service not used in fake
+        object(),  # index_service
+    )
+
+    assert payload and payload["segments"][0]["ref"] == "ok"
+    assert seen["start"]["chapter"] == 12
+    assert seen["end"]["chapter"] == 12
+    assert seen["end"]["verse"] == 2

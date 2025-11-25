@@ -3,12 +3,36 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, Dict, List, Optional, Tuple
 
 from .formatter import clean_html, extract_hebrew_only
 from .logging import log_range_detected
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_inter_chapter_bounds(ref: str) -> Optional[Tuple[str, str, int, int, int, int]]:
+    """Parse a cross-chapter range like ``Genesis 1:21-2:15`` (book may be omitted on the end)."""
+    if "-" not in ref:
+        return None
+
+    start_raw, end_raw = [part.strip() for part in ref.split("-", 1)]
+    start_match = re.match(r"(.+?)\s+(\d+):(\d+)$", start_raw)
+    end_match = re.match(r"(?:(.+?)\s+)?(\d+):(\d+)$", end_raw)
+
+    if not start_match or not end_match:
+        return None
+
+    start_book = start_match.group(1).strip()
+    start_chapter = int(start_match.group(2))
+    start_verse = int(start_match.group(3))
+
+    end_book = end_match.group(1).strip() if end_match.group(1) else start_book
+    end_chapter = int(end_match.group(2))
+    end_verse = int(end_match.group(3))
+
+    return start_book, end_book, start_chapter, start_verse, end_chapter, end_verse
 
 
 async def try_load_range(sefaria_service: Any, ref: str) -> Optional[Dict[str, Any]]:
@@ -194,55 +218,22 @@ async def handle_jerusalem_talmud_range(
     }
 
 
-async def handle_inter_chapter_range(
-    ref: str,
+async def _load_chapter_segments(
     sefaria_service: Any,
-    *,
-    session_id: Optional[str] = None,
-    redis_client: Any = None,
-) -> Optional[Dict[str, Any]]:
-    """Handle inter-chapter ranges by loading each chapter separately."""
-
-    log_range_detected(ref, "inter_chapter")
-    logger.debug(
-        "study.range.inter_chapter.start",
-        extra={"ref": ref, "session_id": session_id},
-    )
-    if "-" not in ref:
-        return None
-
-    start_ref, end_ref = ref.split("-", 1)
-    start_parts = start_ref.split(":")
-    end_parts = end_ref.split(":")
-    if len(start_parts) < 2 or len(end_parts) < 2:
-        logger.warning(
-            "study.range.inter_chapter.invalid_format",
-            extra={"ref": ref},
-        )
-        return None
-
-    book_name = " ".join(start_parts[:-2])
-    start_chapter = int(start_parts[-2])
-    start_verse = int(start_parts[-1])
-    end_chapter = int(end_parts[-2])
-    end_verse = int(end_parts[-1])
-
-    logger.debug(
-        "study.range.inter_chapter.bounds",
-        extra={
-            "ref": ref,
-            "book": book_name,
-            "start_chapter": start_chapter,
-            "start_verse": start_verse,
-            "end_chapter": end_chapter,
-            "end_verse": end_verse,
-        },
-    )
+    book: str,
+    chapter: int,
+    start_verse: int,
+    end_verse: Optional[int],
+) -> List[Dict[str, Any]]:
+    """Load a run of verses from a single chapter until ``end_verse`` or the API stops returning data."""
 
     segments: List[Dict[str, Any]] = []
-    # Fetch start chapter verses
-    for verse_num in range(start_verse, 1000):
-        verse_ref = f"{book_name} {start_chapter}:{verse_num}"
+    verse = start_verse
+    while True:
+        if end_verse is not None and verse > end_verse:
+            break
+
+        verse_ref = f"{book} {chapter}:{verse}"
         try:
             verse_result = await sefaria_service.get_text(verse_ref)
         except Exception as exc:  # pragma: no cover - logging only
@@ -266,52 +257,100 @@ async def handle_inter_chapter_range(
                 "ref": verse_ref,
                 "en_text": clean_html(en_text),
                 "he_text": clean_html(extract_hebrew_only(he_text)),
-                "title": data.get("title", ref),
+                "title": data.get("title", verse_ref),
                 "indexTitle": data.get("indexTitle", ""),
                 "heRef": data.get("heRef", ""),
             }
         )
-        logger.debug(
-            "study.range.inter_chapter.segment_loaded",
-            extra={"ref": verse_ref},
+        verse += 1
+
+    return segments
+
+
+async def handle_inter_chapter_range(
+    ref: str,
+    sefaria_service: Any,
+    *,
+    session_id: Optional[str] = None,
+    redis_client: Any = None,
+) -> Optional[Dict[str, Any]]:
+    """Handle inter-chapter ranges by loading each chapter separately."""
+
+    log_range_detected(ref, "inter_chapter")
+    logger.debug(
+        "study.range.inter_chapter.start",
+        extra={"ref": ref, "session_id": session_id},
+    )
+
+    bounds = _parse_inter_chapter_bounds(ref)
+    if not bounds:
+        logger.warning(
+            "study.range.inter_chapter.invalid_format",
+            extra={"ref": ref},
         )
+        return None
 
-    # Fetch end chapter verses if different chapter
-    if end_chapter > start_chapter:
-        for verse_num in range(1, end_verse + 1):
-            verse_ref = f"{book_name} {end_chapter}:{verse_num}"
-            try:
-                verse_result = await sefaria_service.get_text(verse_ref)
-            except Exception as exc:  # pragma: no cover - logging only
-                logger.error(
-                    "study.range.inter_chapter.fetch_error",
-                    extra={"ref": verse_ref, "error": str(exc)},
+    start_book, end_book, start_chapter, start_verse, end_chapter, end_verse = bounds
+
+    logger.debug(
+        "study.range.inter_chapter.bounds",
+        extra={
+            "ref": ref,
+            "start_book": start_book,
+            "end_book": end_book,
+            "start_chapter": start_chapter,
+            "start_verse": start_verse,
+            "end_chapter": end_chapter,
+            "end_verse": end_verse,
+        },
+    )
+
+    segments: List[Dict[str, Any]] = []
+
+    # Same-book range: walk chapters from start to end.
+    if start_book == end_book:
+        for chapter in range(start_chapter, end_chapter + 1):
+            chapter_start = start_verse if chapter == start_chapter else 1
+            chapter_end = end_verse if chapter == end_chapter else None
+            segments.extend(
+                await _load_chapter_segments(
+                    sefaria_service,
+                    start_book,
+                    chapter,
+                    chapter_start,
+                    chapter_end,
                 )
-                break
-
-            if not (verse_result.get("ok") and verse_result.get("data")):
-                break
-
-            data = verse_result["data"]
-            en_text = data.get("en_text", "") or data.get("text", "")
-            he_text = data.get("he_text", "") or data.get("he", "")
-            if not (en_text or he_text):
-                break
-
-            segments.append(
-                {
-                    "ref": verse_ref,
-                    "en_text": clean_html(en_text),
-                    "he_text": clean_html(extract_hebrew_only(he_text)),
-                    "title": data.get("title", ref),
-                    "indexTitle": data.get("indexTitle", ""),
-                    "heRef": data.get("heRef", ""),
-                }
             )
-            logger.debug(
-                "study.range.inter_chapter.segment_loaded",
-                extra={"ref": verse_ref},
+    else:
+        # Load to the end of the starting book until the API stops responding with data.
+        chapter = start_chapter
+        safety = 0
+        while safety < 150:  # guard against runaway loops
+            safety += 1
+            chapter_segments = await _load_chapter_segments(
+                sefaria_service,
+                start_book,
+                chapter,
+                start_verse if chapter == start_chapter else 1,
+                None,
             )
+            if not chapter_segments:
+                break
+            segments.extend(chapter_segments)
+            chapter += 1
+
+        # Then load from the beginning of the destination book through the end bounds.
+        for chapter in range(1, end_chapter + 1):
+            chapter_segments = await _load_chapter_segments(
+                sefaria_service,
+                end_book,
+                chapter,
+                1,
+                end_verse if chapter == end_chapter else None,
+            )
+            if not chapter_segments:
+                break
+            segments.extend(chapter_segments)
 
     if not segments:
         logger.warning(

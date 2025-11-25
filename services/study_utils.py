@@ -1180,120 +1180,126 @@ async def _handle_jerusalem_talmud_range(
 async def _handle_inter_chapter_range(ref: str, sefaria_service: SefariaService, session_id: str = None, redis_client = None) -> Optional[Dict[str, Any]]:
     """Handle inter-chapter ranges by loading each chapter separately."""
     logger.info(f"[daily] HANDLING INTER-CHAPTER RANGE: {ref}")
-    
-    # Parse the range
-    start_ref, end_ref = ref.split("-", 1)
-    start_chapter_verse = start_ref.split(":")
-    end_chapter_verse = end_ref.split(":")
-    
-    # Extract book name and chapter numbers
-    book_name = " ".join(start_chapter_verse[:-2])  # Everything except last two parts
-    start_chapter = int(start_chapter_verse[-2])
-    start_verse = int(start_chapter_verse[-1])
-    end_chapter = int(end_chapter_verse[-2])
-    end_verse = int(end_chapter_verse[-1])
-    
-    logger.info(f"[daily] INTER-CHAPTER PARSED: {book_name}, {start_chapter}:{start_verse} to {end_chapter}:{end_verse}")
-    
-    all_segments_data = []
-    
-    # Load verses from start chapter
-    for verse_num in range(start_verse, 1000):  # Go up to 1000 verses per chapter
-        verse_ref = f"{book_name} {start_chapter}:{verse_num}"
-        try:
-            verse_result = await sefaria_service.get_text(verse_ref)
-            if verse_result.get("ok") and verse_result.get("data"):
-                verse_data = verse_result["data"]
-                en_text = verse_data.get("en_text", "") or verse_data.get("text", "")
-                he_text = verse_data.get("he_text", "") or verse_data.get("he", "")
-                
-                if en_text or he_text:
-                    english_text = _clean_html_text(_extract_text_entry(en_text, verse_num))
-                    hebrew_text = _clean_html_text(_extract_hebrew_text(he_text, verse_num))
-                    segment_data = {
-                        "ref": verse_ref,
-                        "text": hebrew_text,
-                        "heText": hebrew_text,
-                        "enText": english_text,
-                        "title": verse_data.get("title", ref),
-                        "indexTitle": verse_data.get("indexTitle", ""),
-                        "heRef": verse_data.get("heRef", ""),
-                        "chapter": start_chapter,
-                        "verse": verse_num,
-                        "metadata": {
-                            "title": verse_data.get("title", ref),
-                            "indexTitle": verse_data.get("indexTitle", ""),
-                            "heRef": verse_data.get("heRef", ""),
-                            "chapter": start_chapter,
-                            "verse": verse_num,
-                            "enText": english_text,
-                        },
-                    }
-                    all_segments_data.append(segment_data)
-                    logger.info(f"[daily] INTER-CHAPTER VERSE: {verse_ref}")
-                else:
-                    break  # No more verses in this chapter
-            else:
-                break  # No more verses in this chapter
-        except Exception as e:
-            logger.error(f"[daily] ERROR FETCHING INTER-CHAPTER VERSE {verse_ref}: {str(e)}")
-            break
-    
-    # Load verses from end chapter
-    if end_chapter > start_chapter:
-        for verse_num in range(1, end_verse + 1):
-            verse_ref = f"{book_name} {end_chapter}:{verse_num}"
+
+    def _parse_bounds(raw_ref: str) -> Optional[Tuple[str, str, int, int, int, int]]:
+        if "-" not in raw_ref:
+            return None
+        start_raw, end_raw = [part.strip() for part in raw_ref.split("-", 1)]
+        start_match = re.match(r"(.+?)\s+(\d+):(\d+)$", start_raw)
+        end_match = re.match(r"(?:(.+?)\s+)?(\d+):(\d+)$", end_raw)
+        if not start_match or not end_match:
+            return None
+        start_book = start_match.group(1).strip()
+        start_chapter = int(start_match.group(2))
+        start_verse = int(start_match.group(3))
+        end_book = end_match.group(1).strip() if end_match.group(1) else start_book
+        end_chapter = int(end_match.group(2))
+        end_verse = int(end_match.group(3))
+        return start_book, end_book, start_chapter, start_verse, end_chapter, end_verse
+
+    bounds = _parse_bounds(ref)
+    if not bounds:
+        logger.warning(f"[daily] INTER-CHAPTER RANGE INVALID: {ref}")
+        return None
+
+    start_book, end_book, start_chapter, start_verse, end_chapter, end_verse = bounds
+    logger.info(f"[daily] INTER-CHAPTER PARSED: {start_book}->{end_book}, {start_chapter}:{start_verse} to {end_chapter}:{end_verse}")
+
+    async def _load_chapter(
+        book: str,
+        chapter: int,
+        start: int,
+        end: Optional[int],
+    ) -> List[Dict[str, Any]]:
+        segments: List[Dict[str, Any]] = []
+        verse = start
+        while True:
+            if end is not None and verse > end:
+                break
+
+            verse_ref = f"{book} {chapter}:{verse}"
             try:
                 verse_result = await sefaria_service.get_text(verse_ref)
-                if verse_result.get("ok") and verse_result.get("data"):
-                    verse_data = verse_result["data"]
-                    en_text = verse_data.get("en_text", "") or verse_data.get("text", "")
-                    he_text = verse_data.get("he_text", "") or verse_data.get("he", "")
-                    
-                    if en_text or he_text:
-                        english_text = _clean_html_text(_extract_text_entry(en_text, verse_num))
-                        hebrew_text = _clean_html_text(_extract_hebrew_text(he_text, verse_num))
-                        segment_data = {
-                            "ref": verse_ref,
-                            "text": hebrew_text,
-                            "heText": hebrew_text,
-                            "enText": english_text,
-                            "title": verse_data.get("title", ref),
-                            "indexTitle": verse_data.get("indexTitle", ""),
-                            "heRef": verse_data.get("heRef", ""),
-                            "chapter": end_chapter,
-                            "verse": verse_num,
-                            "metadata": {
-                                "title": verse_data.get("title", ref),
-                                "indexTitle": verse_data.get("indexTitle", ""),
-                                "heRef": verse_data.get("heRef", ""),
-                                "chapter": end_chapter,
-                                "verse": verse_num,
-                                "enText": english_text,
-                            },
-                        }
-                        all_segments_data.append(segment_data)
-                        logger.info(f"[daily] INTER-CHAPTER VERSE: {verse_ref}")
-                    else:
-                        break
-                else:
-                    break
             except Exception as e:
                 logger.error(f"[daily] ERROR FETCHING INTER-CHAPTER VERSE {verse_ref}: {str(e)}")
                 break
-    
+
+            if not (verse_result.get("ok") and verse_result.get("data")):
+                break
+
+            verse_data = verse_result["data"]
+            en_text = verse_data.get("en_text", "") or verse_data.get("text", "")
+            he_text = verse_data.get("he_text", "") or verse_data.get("he", "")
+            if not (en_text or he_text):
+                break
+
+            english_text = _clean_html_text(_extract_text_entry(en_text, verse))
+            hebrew_text = _clean_html_text(_extract_hebrew_text(he_text, verse))
+            segments.append(
+                {
+                    "ref": verse_ref,
+                    "text": hebrew_text or english_text,
+                    "heText": hebrew_text or english_text,
+                    "enText": english_text,
+                    "title": verse_data.get("title", ref),
+                    "indexTitle": verse_data.get("indexTitle", ""),
+                    "heRef": verse_data.get("heRef", ""),
+                    "chapter": chapter,
+                    "verse": verse,
+                    "metadata": {
+                        "title": verse_data.get("title", ref),
+                        "indexTitle": verse_data.get("indexTitle", ""),
+                        "heRef": verse_data.get("heRef", ""),
+                        "chapter": chapter,
+                        "verse": verse,
+                        "enText": english_text,
+                    },
+                }
+            )
+            logger.info(f"[daily] INTER-CHAPTER VERSE: {verse_ref}")
+            verse += 1
+        return segments
+
+    all_segments_data: List[Dict[str, Any]] = []
+
+    if start_book == end_book:
+        for chapter in range(start_chapter, end_chapter + 1):
+            start_verse_for_chapter = start_verse if chapter == start_chapter else 1
+            end_verse_for_chapter = end_verse if chapter == end_chapter else None
+            all_segments_data.extend(
+                await _load_chapter(start_book, chapter, start_verse_for_chapter, end_verse_for_chapter)
+            )
+    else:
+        # Load remaining part of the starting book until data ends.
+        chapter = start_chapter
+        safety = 0
+        while safety < 150:
+            safety += 1
+            chapter_segments = await _load_chapter(start_book, chapter, start_verse if chapter == start_chapter else 1, None)
+            if not chapter_segments:
+                break
+            all_segments_data.extend(chapter_segments)
+            chapter += 1
+
+        # Then load beginning of the destination book up to the requested end bound.
+        for chapter in range(1, end_chapter + 1):
+            chapter_segments = await _load_chapter(end_book, chapter, 1, end_verse if chapter == end_chapter else None)
+            if not chapter_segments:
+                break
+            all_segments_data.extend(chapter_segments)
+
     if not all_segments_data:
         logger.warning(f"[daily] NO SEGMENTS LOADED FOR INTER-CHAPTER RANGE: {ref}")
         return None
-    
+
     # Format segments for frontend
     formatted_segments = []
     total_segments = len(all_segments_data)
     for i, seg_data in enumerate(all_segments_data):
         formatted_segments.append({
             "ref": seg_data.get("ref"),
-            "text": getattr(seg_data, "he_text", "") or seg_data.get("he_text") or "",
-            "heText": getattr(seg_data, "he_text", "") or seg_data.get("he_text") or "",
+            "text": getattr(seg_data, "he_text", "") or seg_data.get("heText") or seg_data.get("text") or "",
+            "heText": getattr(seg_data, "he_text", "") or seg_data.get("heText") or seg_data.get("text") or "",
             "position": (i / (total_segments - 1)) if total_segments > 1 else 0.5,
             "metadata": {
                 "title": seg_data.get("title"),
@@ -1301,9 +1307,9 @@ async def _handle_inter_chapter_range(ref: str, sefaria_service: SefariaService,
                 "heRef": seg_data.get("heRef")
             }
         })
-    
+
     logger.info(f"[daily] INTER-CHAPTER RANGE COMPLETE: loaded {len(formatted_segments)} segments")
-    
+
     # Save total_segments to Redis if session_id and redis_client are provided
     if session_id and redis_client:
         try:
@@ -1312,7 +1318,7 @@ async def _handle_inter_chapter_range(ref: str, sefaria_service: SefariaService,
             logger.info(f"[daily] SAVED TOTAL SEGMENTS: {total_segments} for session {session_id}")
         except Exception as e:
             logger.warning(f"Failed to save total_segments to Redis: {e}")
-    
+
     return {
         "segments": formatted_segments,
         "focusIndex": 0,
@@ -1333,33 +1339,53 @@ async def get_full_daily_text(ref: str, sefaria_service: SefariaService, index_s
     logger.info(f"[daily] GET_FULL_DAILY_TEXT STARTED: ref='{ref}'")
     collection = detect_collection(ref)
     
-    # Check if this is an inter-chapter range first
+    # Check if this is an inter-chapter or intra-chapter range first
     if "-" in ref and ":" in ref:
         start_ref, end_ref = ref.split("-", 1)
         end_ref = end_ref.strip()
         start_ref = start_ref.strip()
         start_info = _parse_ref(start_ref)
-        end_candidate = end_ref
-        if start_info and end_ref and not any(ch.isalpha() for ch in end_ref.split(":", 1)[0]):
-            book_name = (start_info.get("book") or "").strip()
-            end_candidate = f"{book_name} {end_ref}".strip()
+
+        base_book = (start_info.get("book") or "").strip() if start_info else ""
+        base_chapter = start_info.get("chapter") if start_info else None
+
+        # Build an end candidate that preserves context:
+        # - "30:13" -> "<book> 30:13"
+        # - "13"     -> "<book> <start_chapter>:13"
+        if start_info:
+            if ":" not in end_ref:
+                if base_book and base_chapter is not None:
+                    end_candidate = f"{base_book} {base_chapter}:{end_ref}".strip()
+                else:
+                    end_candidate = end_ref
+            elif not any(ch.isalpha() for ch in end_ref.split(":", 1)[0]):
+                end_candidate = f"{base_book} {end_ref}".strip()
+            else:
+                end_candidate = end_ref
+        else:
+            end_candidate = end_ref
+
         end_info = _parse_ref(end_candidate)
 
         start_chapter = start_info.get("chapter") if start_info else None
         end_chapter = end_info.get("chapter") if end_info else None
 
         if start_chapter is None or end_chapter is None:
-            if ":" in start_ref and ":" in end_ref:
+            if ":" in start_ref:
                 start_chapter_verse = start_ref.split(":")
-                end_chapter_verse = end_ref.split(":")
-                if len(start_chapter_verse) >= 2 and len(end_chapter_verse) >= 2:
+                if len(start_chapter_verse) >= 2:
                     try:
-                        if start_chapter is None:
-                            start_chapter = int(start_chapter_verse[-2]) if len(start_chapter_verse) > 1 and start_chapter_verse[-2].isdigit() else None
-                        if end_chapter is None:
-                            end_chapter = int(end_chapter_verse[-2]) if len(end_chapter_verse) > 1 and end_chapter_verse[-2].isdigit() else None
+                        if start_chapter is None and start_chapter_verse[-2].isdigit():
+                            start_chapter = int(start_chapter_verse[-2])
                     except (ValueError, IndexError):
                         start_chapter = start_chapter or None
+            if ":" in end_candidate:
+                end_chapter_verse = end_candidate.split(":")
+                if len(end_chapter_verse) >= 2:
+                    try:
+                        if end_chapter is None and end_chapter_verse[-2].isdigit():
+                            end_chapter = int(end_chapter_verse[-2])
+                    except (ValueError, IndexError):
                         end_chapter = end_chapter or None
 
         if start_chapter is not None and end_chapter is not None:
@@ -1388,10 +1414,19 @@ async def get_full_daily_text(ref: str, sefaria_service: SefariaService, index_s
             end_ref = end_ref.strip()
 
             start_info = _parse_ref(start_ref)
-            end_candidate = end_ref
-            if start_info and end_ref and not any(ch.isalpha() for ch in end_ref.split(":", 1)[0]):
-                book_name = (start_info.get("book") or "").strip()
-                end_candidate = f"{book_name} {end_ref}".strip()
+            base_book = (start_info.get("book") or "").strip() if start_info else ""
+            base_chapter = start_info.get("chapter") if start_info else None
+
+            if start_info:
+                if ":" not in end_ref:
+                    end_candidate = f"{base_book} {base_chapter}:{end_ref}".strip() if base_book and base_chapter is not None else end_ref
+                elif not any(ch.isalpha() for ch in end_ref.split(":", 1)[0]):
+                    end_candidate = f"{base_book} {end_ref}".strip()
+                else:
+                    end_candidate = end_ref
+            else:
+                end_candidate = end_ref
+
             end_info = _parse_ref(end_candidate)
 
             start_chapter = start_info.get("chapter") if start_info else None

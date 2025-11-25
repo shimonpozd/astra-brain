@@ -412,15 +412,18 @@ def _looks_like_inter_chapter_range(ref: str) -> bool:
     except ValueError:
         return False
 
-    start_match = re.search(r"(\d+)(?::\d+)?\s*$", start_part.strip())
-    end_match = re.search(r"(\d+)(?::\d+)?\s*$", end_part.strip())
-    if not start_match or not end_match:
-        return False
+    def _extract_chapter(raw: str) -> Optional[int]:
+        raw = raw.strip()
+        match = re.search(r"(\d+):\d+\s*$", raw)
+        if match:
+            return int(match.group(1))
+        # Fallback for chapter-only refs like "Genesis 2"
+        match = re.search(r"(\d+)\s*$", raw)
+        return int(match.group(1)) if match else None
 
-    try:
-        start_chapter = int(start_match.group(1))
-        end_chapter = int(end_match.group(1))
-    except ValueError:
+    start_chapter = _extract_chapter(start_part)
+    end_chapter = _extract_chapter(end_part)
+    if start_chapter is None or end_chapter is None:
         return False
 
     return start_chapter != end_chapter

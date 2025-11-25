@@ -24,6 +24,20 @@ class SessionService:
         self._study_owner_hash = "study:owners"
 
     @staticmethod
+    def _derive_daily_name(session_id: str) -> str:
+        """Best-effort human name from daily session_id slug."""
+        if not session_id.startswith("daily-"):
+            return session_id
+        parts = session_id.split("-")
+        if len(parts) < 3:
+            return session_id
+        slug = "-".join(parts[2:])
+        slug = slug.replace("-", " ").strip()
+        if not slug:
+            return session_id
+        return slug.title()
+
+    @staticmethod
     def _normalize_user_id(user_id: str) -> tuple[str, uuid.UUID]:
         try:
             user_uuid = uuid.UUID(str(user_id))
@@ -224,9 +238,21 @@ class SessionService:
                     except json.JSONDecodeError:
                         logger.warning("Failed to decode daily session JSON", extra={"key": key_str})
                         continue
+                    name = (
+                        session.get("title_ru")
+                        or session.get("title")
+                        or session.get("display_value_ru")
+                        or session.get("display_value")
+                        or self._derive_daily_name(session_id)
+                    )
+                    if name == session.get("ref"):
+                        name = session.get("display_value_ru") or session.get("display_value") or name
                     sessions.append({
                         "session_id": session_id,
-                        "name": session.get("title", "Daily Study"),
+                        "name": name,
+                        "ref": session.get("ref"),
+                        "display_value": session.get("display_value"),
+                        "display_value_ru": session.get("display_value_ru"),
                         "last_modified": session.get("last_modified", datetime.now().isoformat()),
                         "type": "daily",
                         "completed": session.get("completed", False),
@@ -234,7 +260,7 @@ class SessionService:
                 else:
                     sessions.append({
                         "session_id": session_id,
-                        "name": "Daily Study",
+                        "name": self._derive_daily_name(session_id),
                         "last_modified": datetime.now().isoformat(),
                         "type": "daily",
                         "completed": False,
