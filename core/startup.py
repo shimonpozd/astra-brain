@@ -21,6 +21,8 @@ from brain_service.services.lexicon_service import LexiconService
 from brain_service.services.session_service import SessionService
 from brain_service.services.translation_service import TranslationService
 from brain_service.services.wiki_service import WikiService
+from brain_service.services.xp_service import XpService
+from brain_service.services.achievement_service import AchievementService
 from brain_service.services.navigation_service import NavigationService
 from domain.chat.tools import ToolRegistry
 from .rate_limiting import setup_rate_limiter
@@ -155,6 +157,83 @@ async def lifespan(app: FastAPI):
         print(f"Could not connect to Redis: {e}")
         app.state.redis_client = None
 
+    # Ensure XP table exists
+    async with app.state.db_engine.begin() as conn:
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS user_xp (
+                    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                    xp_total BIGINT NOT NULL DEFAULT 0,
+                    level INT NOT NULL DEFAULT 1,
+                    xp_in_level BIGINT NOT NULL DEFAULT 0,
+                    xp_to_next BIGINT NOT NULL DEFAULT 300,
+                    last_level_up_at TIMESTAMPTZ NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE OR REPLACE FUNCTION user_xp_set_updated_at()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                  NEW.updated_at = NOW();
+                  RETURN NEW;
+                END;
+                $$ language 'plpgsql';
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                  IF NOT EXISTS (
+                    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_user_xp_set_updated_at'
+                  ) THEN
+                    CREATE TRIGGER trg_user_xp_set_updated_at
+                    BEFORE UPDATE ON user_xp
+                    FOR EACH ROW EXECUTE FUNCTION user_xp_set_updated_at();
+                  END IF;
+                END$$;
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS user_achievement_stats (
+                    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                    discipline_total BIGINT NOT NULL DEFAULT 0,
+                    lexicon_total BIGINT NOT NULL DEFAULT 0,
+                    rambam_refs BIGINT NOT NULL DEFAULT 0,
+                    daf_refs BIGINT NOT NULL DEFAULT 0,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_user_achievements_updated_at') THEN
+                    CREATE TRIGGER trg_user_achievements_updated_at
+                    BEFORE UPDATE ON user_achievement_stats
+                    FOR EACH ROW EXECUTE PROCEDURE user_xp_set_updated_at();
+                  END IF;
+                END$$;
+                """
+            )
+        )
+
     # Instantiate and load index service
     app.state.sefaria_index_service = SefariaIndexService(
         http_client=app.state.http_client,
@@ -199,6 +278,10 @@ async def lifespan(app: FastAPI):
         max_chars=4000,
         top_k=3
     )
+
+    # XP & achievements services
+    app.state.achievement_service = AchievementService(app.state.db_session_factory)
+    app.state.xp_service = XpService(app.state.redis_client, app.state.db_session_factory, app.state.achievement_service)
 
     # Instantiate other services
     app.state.sefaria_service = SefariaService(

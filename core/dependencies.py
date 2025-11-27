@@ -5,6 +5,8 @@ from .settings import Settings
 from brain_service.models.db import User
 from brain_service.services.auth_service import AuthService
 from brain_service.services.user_service import UserService
+from brain_service.services.xp_service import XpService
+from brain_service.services.achievement_service import AchievementService
 
 def get_redis_client(request: Request) -> redis.Redis:
     """Dependency to get the Redis client from the application state."""
@@ -72,6 +74,20 @@ def get_auth_service(request: Request) -> AuthService:
     service = getattr(request.app.state, "auth_service", None)
     if service is None:
         raise HTTPException(status_code=503, detail="Auth service unavailable")
+    return service
+
+
+def get_xp_service(request: Request) -> XpService:
+    service = getattr(request.app.state, "xp_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="XP service unavailable")
+    return service
+
+
+def get_achievement_service(request: Request) -> AchievementService:
+    service = getattr(request.app.state, "achievement_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="Achievement service unavailable")
     return service
 
 

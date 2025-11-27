@@ -22,6 +22,7 @@ class SessionService:
         self.redis_client = redis_client
         self.user_service = user_service
         self._study_owner_hash = "study:owners"
+        self._daily_retention_days = 7
 
     @staticmethod
     def _derive_daily_name(session_id: str) -> str:
@@ -231,6 +232,23 @@ class SessionService:
                 if owner is None or owner != user_id_str:
                     continue
 
+                # Drop very old sessions (older than retention window)
+                parsed_date = None
+                try:
+                    if session_id.startswith("daily-"):
+                        parsed_date = datetime.strptime(session_id.split("-")[1], "%Y-%m-%d").date()
+                except Exception:
+                    parsed_date = None
+
+                if parsed_date:
+                    if parsed_date < datetime.utcnow().date() - timedelta(days=self._daily_retention_days):
+                        try:
+                            await self.redis_client.delete(key_str)
+                            await self.redis_client.hdel(self._study_owner_hash, session_id)
+                        except Exception:
+                            pass
+                        continue
+
                 session_blob = await self.redis_client.get(key_str)
                 if session_blob:
                     try:
@@ -247,6 +265,12 @@ class SessionService:
                     )
                     if name == session.get("ref"):
                         name = session.get("display_value_ru") or session.get("display_value") or name
+                    is_stale = False
+                    if parsed_date:
+                        try:
+                            is_stale = parsed_date < datetime.utcnow().date()
+                        except Exception:
+                            is_stale = False
                     sessions.append({
                         "session_id": session_id,
                         "name": name,
@@ -256,6 +280,7 @@ class SessionService:
                         "last_modified": session.get("last_modified", datetime.now().isoformat()),
                         "type": "daily",
                         "completed": session.get("completed", False),
+                        "stale": is_stale,
                     })
                 else:
                     sessions.append({
@@ -264,6 +289,7 @@ class SessionService:
                         "last_modified": datetime.now().isoformat(),
                         "type": "daily",
                         "completed": False,
+                        "stale": True,
                     })
         except Exception as exc:
             logger.error("Error occurred while scanning for daily sessions", extra={"error": str(exc)})
@@ -379,6 +405,11 @@ class SessionService:
                 return False
 
             await self.redis_client.set(key, json.dumps(session_data, ensure_ascii=False))
+            if session_type == "daily":
+                try:
+                    await self.redis_client.expire(key, 3600 * 24 * self._daily_retention_days)
+                except Exception:
+                    pass
 
             logger.info(
                 "Session saved",
