@@ -212,7 +212,13 @@ def compact_and_deduplicate_links(raw_links: list, categories: Optional[List[str
             "indexTitle": link.get("indexTitle", commentator),
             "category": link_category,
             "heCategory": link.get("heCategory"),
-            "commentaryNum": link.get("commentaryNum")
+            "commentaryNum": link.get("commentaryNum"),
+            # enrich with dating / language markers so UI can display badges
+            "compDate": link.get("compDate") or link.get("comp_date"),
+            "sourceHasEn": link.get("sourceHasEn"),
+            # keep raw text snippets (hebrew first) for preview
+            "he": link.get("he") or link.get("hebrew"),
+            "text": link.get("text"),
         })
 
     def sort_key(link):

@@ -70,6 +70,7 @@ TASK_ENV_MAPPING: Dict[str, List[str]] = {
     "STUDY": ["STUDY_MODEL", "ASTRA_MODEL_STUDY"],
     "LEXICON": ["LEXICON_MODEL", "ASTRA_MODEL_LEXICON"],
     "SPEECHIFY": ["SPEECHIFY_MODEL", "ASTRA_MODEL_SPEECHIFY"],
+    "PROFILE": ["PROFILE_MODEL", "ASTRA_MODEL_PROFILE"],
 }
 
 TASK_OVERRIDE_MAPPING: Dict[str, str] = {
@@ -84,6 +85,7 @@ TASK_OVERRIDE_MAPPING: Dict[str, str] = {
     "STUDY": "study",
     "LEXICON": "lexicon",
     "SPEECHIFY": "speechify",
+    "PROFILE": "profile",
 }
 
 

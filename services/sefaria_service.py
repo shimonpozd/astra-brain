@@ -26,6 +26,44 @@ class SefariaService:
         param_str = "&".join(sorted(f"{k}={v}" for k, v in params.items()))
         return f"sefaria_cache:v1:{ref}:{param_str}"
 
+    async def get_index_raw(self, index_title: str) -> Dict[str, Any]:
+        """
+        Fetch the raw index payload for a book/commentary from Sefaria.
+        """
+        cache_key = f"sefaria_index_cache:v1:{index_title}"
+        if self.redis_client:
+            try:
+                cached = await self.redis_client.get(cache_key)
+                if cached:
+                    return json.loads(cached)
+            except Exception as exc:  # pragma: no cover - best-effort
+                logger.warning("Sefaria index cache read failed", extra={"slug": index_title, "error": str(exc)})
+
+        try:
+            result = await with_retries(
+                lambda: get_from_sefaria(
+                    self.http_client,
+                    f"v2/raw/index/{quote(index_title)}",
+                    api_url=self.api_url,
+                    api_key=self.api_key,
+                )
+            )
+            if isinstance(result, dict) and result.get("error"):
+                payload = {"ok": False, "error": result.get("error"), "data": result}
+            else:
+                payload = {"ok": isinstance(result, dict), "data": result if isinstance(result, dict) else None}
+        except Exception as exc:
+            logger.error("Sefaria index fetch failed", extra={"slug": index_title, "error": str(exc)}, exc_info=True)
+            payload = {"ok": False, "error": str(exc)}
+
+        if payload.get("ok") and self.redis_client:
+            try:
+                await self.redis_client.set(cache_key, json.dumps(payload), ex=self.cache_ttl)
+            except Exception as exc:  # pragma: no cover - best-effort
+                logger.warning("Sefaria index cache write failed", extra={"slug": index_title, "error": str(exc)})
+
+        return payload
+
     async def get_text(self, tref: str, lang: str | None = None) -> Dict[str, Any]:
         # Request both Hebrew (source) and English (translation) versions
         params = {"version": ["source", "translation"], "context": 0, "pad": 0, "commentary": 0}

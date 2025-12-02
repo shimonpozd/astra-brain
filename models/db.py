@@ -198,5 +198,73 @@ class UserApiKey(Base, TimestampMixin):
     usage_today: Mapped[int] = mapped_column(default=0, nullable=False)
     last_reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-
     user: Mapped["User"] = relationship("User", back_populates="api_keys")
+
+
+class Profile(Base, TimestampMixin):
+    """
+    Cached author/work profile assembled from Sefaria + Wikipedia + LLM action.
+    """
+
+    __tablename__ = "profiles"
+
+    slug: Mapped[str] = mapped_column(String(255), primary_key=True)
+    title_en: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    title_he: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    json_raw: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    summary_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    facts: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    authors: Mapped[list | dict | None] = mapped_column(JSONB, nullable=True)
+
+    lifespan: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    period: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    comp_place: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    pub_place: Mapped[str | None] = mapped_column(String(256), nullable=True)
+
+    # Manual curation / verification
+    manual_summary_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    manual_facts: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false", default=False)
+    verified_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Work(Base, TimestampMixin):
+    __tablename__ = "works"
+
+    index_title: Mapped[str] = mapped_column(String(512), primary_key=True)
+    title_en: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    title_he: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    en_desc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    comp_date: Mapped[dict | list | str | None] = mapped_column(JSONB, nullable=True)
+    pub_date: Mapped[dict | list | str | None] = mapped_column(JSONB, nullable=True)
+    comp_place: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    pub_place: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    categories: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    links: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    summary_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class Author(Base, TimestampMixin):
+    __tablename__ = "authors"
+
+    slug: Mapped[str] = mapped_column(String(256), primary_key=True)
+    name_en: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    name_he: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    summary_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lifespan: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    period: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    links: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+
+class WorkAuthor(Base, TimestampMixin):
+    __tablename__ = "work_authors"
+    __table_args__ = (
+        Index("ix_work_authors_work", "work_id"),
+        Index("ix_work_authors_author", "author_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    work_id: Mapped[str] = mapped_column(String(512), ForeignKey("works.index_title", ondelete="CASCADE"))
+    author_id: Mapped[str] = mapped_column(String(256), ForeignKey("authors.slug", ondelete="CASCADE"))

@@ -2474,16 +2474,20 @@ async def get_bookshelf_for(ref: str, sefaria_service: SefariaService, index_ser
     if categories is None:
         categories = [
             "Commentary",
+            "Mishnah",
             "Talmud",
             "Halakhah",
             "Responsa",
-            "Mishnah",
             "Midrash",
-            "Jewish Thought",
-            "Chasidut",
             "Kabbalah",
-            "Modern Works",
-            "Bible",
+            "Liturgy",
+            "Jewish Thought",
+            "Tosefta",
+            "Chasidut",
+            "Musar",
+            "Second Temple",
+            "Reference",
+            "Tanakh",
         ]
 
     # 1. Try the original ref
@@ -2521,14 +2525,21 @@ async def get_bookshelf_for(ref: str, sefaria_service: SefariaService, index_ser
         en_text, he_text = full_texts[i]
         item["text_full"] = en_text
         item["heTextFull"] = he_text
-        # For backward compatibility, populate preview with a snippet
-        item["preview"] = (en_text or he_text)[:PREVIEW_MAX_LEN]
+        item["sourceHasEn"] = bool(en_text and en_text.strip())
+        # For backward compatibility, populate preview with a snippet (prefer Hebrew)
+        snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+        snippet_en = (en_text or "").strip()[:PREVIEW_MAX_LEN]
+        item["preview"] = snippet_he or snippet_en
+        if snippet_he and snippet_en:
+            item["text"] = {"he": snippet_he, "en": snippet_en}
 
     # For items beyond 20, ensure the fields exist but are empty to satisfy the model
     for item in sorted_items[20:]:
-        item["text_full"] = ""
-        item["heTextFull"] = ""
-        item["preview"] = ""
+        item["text_full"] = item.get("text_full", "")
+        item["heTextFull"] = item.get("heTextFull", "")
+        item["preview"] = item.get("preview", "") or item.get("he", "") or ""
+        if "sourceHasEn" not in item:
+            item["sourceHasEn"] = bool(item.get("text_full"))
 
     counts = {cat: 0 for cat in {item.get("category", "Unknown") for item in sorted_items}}
     for item in sorted_items:

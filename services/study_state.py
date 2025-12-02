@@ -60,11 +60,18 @@ class BookshelfItem(BaseModel):
     heCategory: Optional[str] = None
     commentaryNum: Optional[Any] = None
     score: Optional[float] = None
-    preview: str
+    preview: Optional[Any] = None
     text_full: Optional[str] = None
     heTextFull: Optional[str] = None
     title: Optional[str] = None
     heTitle: Optional[str] = None
+    compDate: Optional[List[int]] = None
+    sourceHasEn: Optional[bool] = None
+    he: Optional[Any] = None
+    text: Optional[Any] = None
+
+    class Config:
+        extra = "allow"
 
 class Bookshelf(BaseModel):
     counts: Dict[str, int]

@@ -80,17 +80,21 @@ class SefariaIndexService:
 
     def get_bookshelf_categories(self) -> list[dict[str, str]]:
         """Returns the curated list of categories for the bookshelf UI."""
-        # This list is curated and ordered specifically for the UI.
+        # Curated, ordered, and aligned with the client fallback list.
         return [
             {"name": "Commentary"},
+            {"name": "Tanakh"},
+            {"name": "Mishnah"},
             {"name": "Talmud"},
             {"name": "Halakhah"},
             {"name": "Responsa"},
-            {"name": "Mishnah"},
             {"name": "Midrash"},
-            {"name": "Jewish Thought"},
-            {"name": "Chasidut"},
             {"name": "Kabbalah"},
-            {"name": "Modern Works"},
-            {"name": "Bible"},
+            {"name": "Liturgy"},
+            {"name": "Jewish Thought"},
+            {"name": "Tosefta"},
+            {"name": "Chasidut"},
+            {"name": "Musar"},
+            {"name": "Second Temple"},
+            {"name": "Reference"},
         ]

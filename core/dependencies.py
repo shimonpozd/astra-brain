@@ -63,6 +63,19 @@ def get_navigation_service(request: Request):
     return request.app.state.navigation_service
 
 
+def get_wiki_service(request: Request):
+    """Dependency to get the WikiService instance."""
+    return request.app.state.wiki_service
+
+
+def get_profile_service(request: Request):
+    """Dependency to get the ProfileService instance."""
+    service = getattr(request.app.state, "profile_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="Profile service is not available.")
+    return service
+
+
 def get_user_service(request: Request) -> UserService:
     service = getattr(request.app.state, "user_service", None)
     if service is None:

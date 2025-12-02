@@ -24,6 +24,7 @@ from brain_service.services.wiki_service import WikiService
 from brain_service.services.xp_service import XpService
 from brain_service.services.achievement_service import AchievementService
 from brain_service.services.navigation_service import NavigationService
+from brain_service.services.profile_service import ProfileService
 from domain.chat.tools import ToolRegistry
 from .rate_limiting import setup_rate_limiter
 from .database import create_engine, create_session_factory, shutdown_engine
@@ -127,6 +128,76 @@ async def lifespan(app: FastAPI):
             text(
                 "CREATE INDEX IF NOT EXISTS ix_user_login_events_created_at ON user_login_events (created_at)"
             )
+        )
+        # works/authors tables for profiles
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS works (
+                    index_title VARCHAR(512) PRIMARY KEY,
+                    title_en VARCHAR(512),
+                    title_he VARCHAR(512),
+                    en_desc TEXT,
+                    comp_date JSONB,
+                    pub_date JSONB,
+                    comp_place VARCHAR(256),
+                    pub_place VARCHAR(256),
+                    categories JSONB,
+                    links JSONB,
+                    summary_html TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS authors (
+                    slug VARCHAR(256) PRIMARY KEY,
+                    name_en VARCHAR(512),
+                    name_he VARCHAR(512),
+                    summary_html TEXT,
+                    lifespan VARCHAR(128),
+                    period VARCHAR(128),
+                    links JSONB,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS work_authors (
+                    id UUID PRIMARY KEY,
+                    work_id VARCHAR(512) REFERENCES works(index_title) ON DELETE CASCADE,
+                    author_id VARCHAR(256) REFERENCES authors(slug) ON DELETE CASCADE,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_work_authors_work ON work_authors (work_id)"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_work_authors_author ON work_authors (author_id)"))
+        # Profiles curation columns (idempotent)
+        await conn.execute(
+            text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS manual_summary_html TEXT")
+        )
+        await conn.execute(
+            text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS manual_facts JSONB")
+        )
+        await conn.execute(
+            text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE")
+        )
+        await conn.execute(
+            text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS verified_by VARCHAR(128)")
+        )
+        await conn.execute(
+            text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ")
         )
     app.state.user_service = UserService(
         app.state.db_session_factory, encryption_secret=settings.API_KEY_SECRET
@@ -373,6 +444,15 @@ async def lifespan(app: FastAPI):
         app.state.study_service.update_study_config(new_config)
 
     await register_study_config_listener(app.state.config_service, _on_study_config_update)
+
+    # Profile inspector service (Sefaria + Wikipedia + LLM)
+    app.state.profile_service = ProfileService(
+        redis_client=app.state.redis_client,
+        session_factory=app.state.db_session_factory,
+        sefaria_service=app.state.sefaria_service,
+        wiki_service=app.state.wiki_service,
+        cache_ttl_sec=settings.SEFARIA_CACHE_TTL,
+    )
 
     # Instantiate navigation service
     app.state.navigation_service = NavigationService(
