@@ -72,6 +72,8 @@ async def get_timeline_people(
     if not slug:
       continue
     facts = p.get("facts") or {}
+    if not isinstance(facts, dict):
+      facts = {}
     author_facts = facts.get("author") if isinstance(facts, dict) else {}
     period_val = p.get("period") or (author_facts.get("period") if isinstance(author_facts, dict) else None)
     lifespan_val = p.get("lifespan") or (author_facts.get("lifespan") if isinstance(author_facts, dict) else None)
@@ -82,6 +84,8 @@ async def get_timeline_people(
     categories = author_facts.get("categories") if isinstance(author_facts, dict) else None
     images = author_facts.get("images") if isinstance(author_facts, dict) else None
     display = author_facts.get("display") if isinstance(author_facts, dict) else {}
+    if not isinstance(display, dict):
+      display = {}
 
     # Fallback to authors table if period/lifespan absent
     if not period_val or not lifespan_val:
