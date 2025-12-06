@@ -11,6 +11,25 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_ARTICLE_TAGS = {"p", "h2", "h3", "ul", "li", "blockquote", "img", "small", "a"}
+STRIP_SELECTORS = [
+    "table.infobox",
+    "table.vertical-navbox",
+    "table.navbox",
+    "table.metadata",
+    "div.hatnote",
+    "div.reflist",
+    "ol.references",
+    "div.mw-references-wrap",
+    "div.toc",
+    "span.mw-editsection",
+    "sup.reference",
+    "div.noprint",
+    "script",
+    "style",
+]
+
+
 class WikiService:
     """
     Service for searching Wikipedia and Chabadpedia for biographical and reference information.
@@ -41,6 +60,109 @@ class WikiService:
     def _cache_key(self, service: str, query: str, lang: str = "") -> str:
         """Generate cache key for wiki searches."""
         return f"wiki:{service}:{lang}:{query.lower()}"
+
+    async def fetch_wikipedia_page_via_mcp(self, mcp_base_url: str, url: str) -> Optional[Dict[str, Any]]:
+        """
+        Try to fetch cleaned article content through an MCP Wikipedia server.
+        Expects JSON with 'html' or 'text' fields.
+        """
+        if not mcp_base_url or not url:
+            return None
+        full = mcp_base_url.rstrip("/") + "/resources"
+        try:
+            resp = await self.http_client.get(
+                full, params={"uri": url}, headers={"User-Agent": self.user_agent}, timeout=15.0
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            # Try to normalize various possible shapes
+            if isinstance(data, dict) and "data" in data:
+                data = data["data"]
+            if isinstance(data, list) and data:
+                data = data[0]
+            html = None
+            text = None
+            if isinstance(data, dict):
+                html = data.get("html") or data.get("content") or data.get("body")
+                text = data.get("text") or data.get("plain") or data.get("content")
+            if not html and not text:
+                return None
+            return {"html": html or "", "content": text or "", "url": url}
+        except Exception as exc:
+            logger.warning("MCP wikipedia fetch failed", extra={"url": url, "error": str(exc)})
+            return None
+
+    async def fetch_wikipedia_page(self, url: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetch full page HTML by URL (no search). Returns dict with html/text/title if possible.
+        """
+        if not url:
+            return None
+        cache_key = f"wiki:page:{url}"
+        if self.redis_client:
+            try:
+                cached = await self.redis_client.get(cache_key)
+                if cached:
+                    logger.info("Wikipedia page cache HIT", extra={"url": url})
+                    return json.loads(cached)
+            except Exception as e:
+                logger.error("Redis cache read failed for Wikipedia page", extra={"url": url, "error": str(e)})
+
+        headers = {"User-Agent": self.user_agent}
+        try:
+            resp = await self.http_client.get(url, headers=headers, timeout=20.0)
+            resp.raise_for_status()
+            html = resp.text
+            cleaned_html, text = self._extract_main_content(html)
+            data = {"html": cleaned_html or html, "raw_html": html, "content": text, "url": url}
+            if self.redis_client:
+                try:
+                    await self.redis_client.setex(cache_key, self.cache_ttl_sec, json.dumps(data))
+                    logger.info("Wikipedia page cache WRITE", extra={"url": url})
+                except Exception as e:
+                    logger.error("Redis cache write failed for Wikipedia page", extra={"url": url, "error": str(e)})
+            return data
+        except Exception as e:
+            logger.warning("Failed to fetch Wikipedia page", extra={"url": url, "error": str(e)})
+            return None
+
+    def _extract_main_content(self, html: str) -> tuple[str, str]:
+        """
+        Keep only the article body to reduce LLM tokens.
+        Returns (clean_html, plain_text).
+        """
+        try:
+            soup = BeautifulSoup(html, "html.parser")
+            main = soup.find("div", class_="mw-parser-output") or soup.find("div", id="mw-content-text") or soup
+
+            for selector in STRIP_SELECTORS:
+                for el in main.select(selector):
+                    el.decompose()
+
+            for el in main.find_all(True):
+                tag = (el.name or "").lower()
+                if tag not in ALLOWED_ARTICLE_TAGS:
+                    el.unwrap()
+                    continue
+                attrs = dict(el.attrs)
+                for attr in list(attrs.keys()):
+                    if tag == "a" and attr in {"href", "title"}:
+                        continue
+                    if tag == "img" and attr in {"src", "alt"}:
+                        continue
+                    el.attrs.pop(attr, None)
+
+            clean_html = str(main)
+            text = main.get_text(" ", strip=True)
+            # cap to avoid oversized payloads
+            max_len = 50000
+            if len(text) > max_len:
+                text = text[:max_len]
+            return clean_html, text
+        except Exception as exc:
+            logger.warning("Failed to extract main content", extra={"error": str(exc)})
+            text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+            return "", text
     
     async def search_wikipedia(self, query: str, lang_priority: Optional[List[str]] = None) -> Dict[str, Any]:
         """

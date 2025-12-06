@@ -16,6 +16,16 @@ class ProfileUpdatePayload(BaseModel):
     summary_html: str | None = None
     facts: dict | None = None
 
+class AuthorOnlyPayload(BaseModel):
+    name: str = Field(..., min_length=1)
+    wiki_url: str | None = None
+    raw_text: str | None = None
+    period: str | None = None
+    period_ru: str | None = None
+    region: str | None = None
+    generation: int | None = None
+    sub_period: str | None = None
+
 
 class ProfileListQuery(BaseModel):
     q: str | None = None
@@ -36,6 +46,19 @@ async def profile_handler(
     if not result.get("ok"):
         raise HTTPException(status_code=404, detail=result.get("error", "Profile not found"))
     return result
+
+
+@router.delete("/profile")
+async def profile_delete_handler(
+    slug: str,
+    profile_service: ProfileService = Depends(get_profile_service),
+    admin: User = Depends(require_admin_user),
+):
+    """
+    Delete profile cache entry (does not remove works/authors).
+    """
+    await profile_service.delete_profile(slug.strip())
+    return {"ok": True}
 
 
 @router.patch("/profile")
@@ -68,6 +91,30 @@ async def profile_regenerate_handler(
     result = await profile_service.regenerate_profile(slug.strip())
     if not result.get("ok"):
         raise HTTPException(status_code=404, detail=result.get("error", "Profile not found"))
+    return result
+
+
+@router.post("/profile/author_only")
+async def profile_author_only_handler(
+    payload: AuthorOnlyPayload,
+    profile_service: ProfileService = Depends(get_profile_service),
+    admin: User = Depends(require_admin_user),
+):
+    """
+    Generate/save author-only profile (без произведения) по имени на иврите/slug.
+    """
+    result = await profile_service.generate_author_profile(
+        name=payload.name.strip(),
+        wiki_url=payload.wiki_url,
+        raw_text=payload.raw_text,
+        period=payload.period,
+        period_ru=payload.period_ru,
+        region=payload.region,
+        generation=payload.generation,
+        sub_period=payload.sub_period,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to generate author profile"))
     return result
 
 
