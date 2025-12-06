@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_ARTICLE_TAGS = {"p", "h2", "h3", "ul", "li", "blockquote", "img", "small", "a"}
 STRIP_SELECTORS = [
-    "table.infobox",
     "table.vertical-navbox",
     "table.navbox",
     "table.metadata",
@@ -22,11 +21,20 @@ STRIP_SELECTORS = [
     "ol.references",
     "div.mw-references-wrap",
     "div.toc",
-    "span.mw-editsection",
-    "sup.reference",
+    "div.thumb",
+    "div.gallery",
     "div.noprint",
+    "nav",
+    "header",
+    "footer",
+    "form",
+    "button",
+    "span.mw-editsection",
+    "span.mw-cite-backlink",
+    "sup.reference",
     "script",
     "style",
+    "noscript",
 ]
 
 
@@ -154,7 +162,7 @@ class WikiService:
 
             clean_html = str(main)
             text = main.get_text(" ", strip=True)
-            # cap to avoid oversized payloads
+            # cap to avoid oversized payloads (не слишком жёстко, но чтобы не бить лимиты)
             max_len = 50000
             if len(text) > max_len:
                 text = text[:max_len]
