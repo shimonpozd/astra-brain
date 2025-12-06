@@ -77,7 +77,17 @@ async def get_timeline_people(
     author_facts = facts.get("author") if isinstance(facts, dict) else {}
     period_val = p.get("period") or (author_facts.get("period") if isinstance(author_facts, dict) else None)
     lifespan_val = p.get("lifespan") or (author_facts.get("lifespan") if isinstance(author_facts, dict) else None)
-    generation_val = p.get("generation") or (author_facts.get("generation") if isinstance(author_facts, dict) else None)
+    def _to_int(val):
+      if val is None:
+        return None
+      if isinstance(val, (int, float)):
+        return int(val)
+      if isinstance(val, str) and val.strip().lstrip("+-").isdigit():
+        return int(val.strip())
+      return None
+
+    generation_val_raw = p.get("generation") or (author_facts.get("generation") if isinstance(author_facts, dict) else None)
+    generation_val = _to_int(generation_val_raw)
     region_val = p.get("region") or p.get("region_id") or p.get("period_region") or (author_facts.get("region") if isinstance(author_facts, dict) else None)
     sub_period_val = p.get("subPeriod") or p.get("period_sub") or (author_facts.get("subPeriod") if isinstance(author_facts, dict) else None)
     lifespan_range = author_facts.get("lifespan_range") if isinstance(author_facts, dict) else None
