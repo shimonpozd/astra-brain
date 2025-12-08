@@ -750,8 +750,16 @@ class ProfileService:
         region: str | None = None,
         generation: int | None = None,
         sub_period: str | None = None,
+        force: bool = False,
     ) -> Dict[str, Any]:
         slug = name.strip()
+        if not force:
+            existing = await self._get_db_profile(slug)
+            if existing:
+                existing["ok"] = True
+                existing["skipped"] = True
+                existing["reason"] = "already_exists"
+                return existing
         author_wiki = None
         author_extra = {}
         # 1) если есть wiki_url — пробуем сразу скачать страницу и НЕ делаем поиск

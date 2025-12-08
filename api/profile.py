@@ -27,6 +27,7 @@ class AuthorOnlyPayload(BaseModel):
     region: str | None = None
     generation: int | None = None
     sub_period: str | None = None
+    force: bool = False
 
 
 class ProfileListQuery(BaseModel):
@@ -116,6 +117,7 @@ async def profile_author_only_handler(
         region=payload.region,
         generation=payload.generation,
         sub_period=payload.sub_period,
+        force=payload.force,
     )
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error", "Failed to generate author profile"))
