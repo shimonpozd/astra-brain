@@ -25,10 +25,12 @@ from brain_service.services.xp_service import XpService
 from brain_service.services.achievement_service import AchievementService
 from brain_service.services.navigation_service import NavigationService
 from brain_service.services.profile_service import ProfileService
+from brain_service.services.talmudic_concept_service import TalmudicConceptService
 from domain.chat.tools import ToolRegistry
 from .rate_limiting import setup_rate_limiter
 from .database import create_engine, create_session_factory, shutdown_engine
 from brain_service.models.db import Base
+from brain_service.models import talmudic_concept  # noqa: F401
 from brain_service.services.user_service import UserService
 from brain_service.services.auth_service import AuthService
 from .config_loader import ensure_config_root
@@ -452,6 +454,11 @@ async def lifespan(app: FastAPI):
         sefaria_service=app.state.sefaria_service,
         wiki_service=app.state.wiki_service,
         cache_ttl_sec=settings.SEFARIA_CACHE_TTL,
+    )
+
+    # Talmudic concepts (highlighting + content)
+    app.state.talmudic_concept_service = TalmudicConceptService(
+        session_factory=app.state.db_session_factory,
     )
 
     # Instantiate navigation service

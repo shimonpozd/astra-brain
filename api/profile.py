@@ -15,6 +15,8 @@ class ProfileUpdatePayload(BaseModel):
     slug: str = Field(..., min_length=1)
     summary_html: str | None = None
     facts: dict | None = None
+    title_en: str | None = None
+    title_he: str | None = None
 
 class AuthorOnlyPayload(BaseModel):
     name: str = Field(..., min_length=1)
@@ -75,6 +77,8 @@ async def profile_update_handler(
         payload.summary_html,
         payload.facts,
         verified_by=admin.username,
+        title_en=payload.title_en,
+        title_he=payload.title_he,
     )
     return result
 

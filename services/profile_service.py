@@ -660,7 +660,15 @@ class ProfileService:
         await self._set_cached(slug, payload)
         return payload
 
-    async def save_manual_profile(self, slug: str, summary_html: str | None, facts: dict | None, verified_by: str | None) -> Dict[str, Any]:
+    async def save_manual_profile(
+        self,
+        slug: str,
+        summary_html: str | None,
+        facts: dict | None,
+        verified_by: str | None,
+        title_en: str | None = None,
+        title_he: str | None = None,
+    ) -> Dict[str, Any]:
         sanitized_html = sanitize_html(summary_html or "") if summary_html else None
         async with self._session_factory() as session:
             async with session.begin():
@@ -672,6 +680,10 @@ class ProfileService:
                     profile.manual_summary_html = sanitized_html
                 if facts is not None:
                     profile.manual_facts = facts
+                if title_en is not None:
+                    profile.title_en = title_en.strip()
+                if title_he is not None:
+                    profile.title_he = title_he.strip()
                 profile.is_verified = True
                 profile.verified_by = verified_by
                 profile.verified_at = datetime.utcnow()

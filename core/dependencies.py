@@ -7,6 +7,7 @@ from brain_service.services.auth_service import AuthService
 from brain_service.services.user_service import UserService
 from brain_service.services.xp_service import XpService
 from brain_service.services.achievement_service import AchievementService
+from brain_service.services.talmudic_concept_service import TalmudicConceptService
 
 def get_redis_client(request: Request) -> redis.Redis:
     """Dependency to get the Redis client from the application state."""
@@ -73,6 +74,14 @@ def get_profile_service(request: Request):
     service = getattr(request.app.state, "profile_service", None)
     if service is None:
         raise HTTPException(status_code=503, detail="Profile service is not available.")
+    return service
+
+
+def get_talmudic_concept_service(request: Request) -> TalmudicConceptService:
+    """Dependency to get the TalmudicConceptService instance."""
+    service = getattr(request.app.state, "talmudic_concept_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="Talmudic concept service is not available.")
     return service
 
 

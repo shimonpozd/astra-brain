@@ -72,6 +72,7 @@ TASK_ENV_MAPPING: Dict[str, List[str]] = {
     "SPEECHIFY": ["SPEECHIFY_MODEL", "ASTRA_MODEL_SPEECHIFY"],
     "PROFILE": ["PROFILE_MODEL", "ASTRA_MODEL_PROFILE"],
     "TIMELINE_BIO": ["TIMELINE_BIO_MODEL", "ASTRA_MODEL_TIMELINE_BIO"],
+    "TALMUDIC_CONCEPT_GEN": ["TALMUDIC_CONCEPT_MODEL", "ASTRA_MODEL_TALMUDIC_CONCEPT"],
 }
 
 TASK_OVERRIDE_MAPPING: Dict[str, str] = {
@@ -88,6 +89,7 @@ TASK_OVERRIDE_MAPPING: Dict[str, str] = {
     "SPEECHIFY": "speechify",
     "PROFILE": "profile",
     "TIMELINE_BIO": "timeline_bio",
+    "TALMUDIC_CONCEPT_GEN": "talmudic_concept_gen",
 }
 
 
