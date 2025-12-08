@@ -132,6 +132,16 @@ async def get_timeline_people(
       except Exception as exc:
         logger.debug("timeline:get_profile fallback failed", extra={"slug": slug, "error": str(exc)})
 
+    images_list = []
+    if isinstance(images, list):
+      for img in images:
+        if isinstance(img, str):
+          images_list.append(img)
+        elif isinstance(img, dict) and img.get("url"):
+          images_list.append(str(img.get("url")))
+
+    categories_list = categories if isinstance(categories, list) else None
+
     person = TimelinePerson(
       slug=slug,
       name_en=p.get("title_en") or display.get("name_en") or slug,
@@ -144,8 +154,8 @@ async def get_timeline_people(
       generation=generation_val,
       region=region_val,
       summary_html=p.get("summary_html"),
-      categories=categories if isinstance(categories, list) else None,
-      images=images if isinstance(images, list) else None,
+      categories=categories_list,
+      images=images_list or None,
       is_verified=p.get("is_verified"),
     )
 
