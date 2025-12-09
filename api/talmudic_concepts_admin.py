@@ -28,7 +28,8 @@ class ConceptResponse(ConceptPayload):
 
 
 class BatchConceptPayload(BaseModel):
-    term_he: str = Field(..., description="Primary Hebrew term")
+    term_he: Optional[str] = Field(None, description="Primary Hebrew term")
+    term: Optional[str] = Field(None, description="Alias for term_he")
     slug: Optional[str] = None
     short_summary_html: Optional[str] = None
     full_article_html: Optional[str] = None
@@ -123,7 +124,7 @@ async def batch_import_concepts(
 
     created_items: list[dict] = []
     for item in payload:
-        term_he = item.term_he.strip()
+        term_he = (item.term_he or item.term or "").strip()
         if not term_he:
             continue
         slug = (item.slug or strip_niqqud(term_he).replace(" ", "-")).strip()
