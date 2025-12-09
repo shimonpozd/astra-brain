@@ -220,7 +220,7 @@ async def get_timeline_people(
       subPeriod=sub_period_val,
       generation=generation_val,
       region=region_val,
-      summary_html=p.get("summary_html"),
+      summary_html=None,  # тяжелый HTML не нужен для таймлайна
       categories=categories_list,
       images=images_list or None,
       is_verified=p.get("is_verified"),
