@@ -694,7 +694,8 @@ class ProfileService:
                 return payload
 
     async def list_profiles(self, *, query: str | None = None, only_unverified: bool = False, limit: int = 100) -> Dict[str, Any]:
-        stmt = select(Profile).order_by(Profile.updated_at.desc()).limit(max(1, min(limit, 500)))
+        # расширяем верхний предел для таймлайна: до 5000 записей за раз
+        stmt = select(Profile).order_by(Profile.updated_at.desc()).limit(max(1, min(limit, 5000)))
         if query:
             like = f"%{query.lower()}%"
             stmt = stmt.where(or_(Profile.slug.ilike(like), Profile.title_en.ilike(like), Profile.title_he.ilike(like)))
