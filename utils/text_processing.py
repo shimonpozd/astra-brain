@@ -60,7 +60,8 @@ def generate_vowel_insensitive_regex(name_he: str) -> str:
 
     core = between.join(letters)
     start_boundary = r"(?<![\u0590-\u05FF])"  # не в середине другого еврейского слова
-    end_boundary = r"(?=$|[^\u0590-\u05FF])"
+    # не позволяем продолжению ивритского слова сразу после пробела/никуда
+    end_boundary = r"(?!(?:\s*[\u0590-\u05FF]))"
     pattern = start_boundary + prefix + core + end_boundary
     return pattern
 
