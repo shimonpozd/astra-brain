@@ -67,6 +67,59 @@ async def get_timeline_people(
   if not isinstance(profiles, list):
     profiles = []
 
+  def _normalize_period(period_val: Optional[str], sub_period_val: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+    """Map legacy/child period ids to canonical top-level periods."""
+    if not period_val:
+      return None, sub_period_val
+    lower = period_val.lower()
+    # Танах: любые torah_* -> torah
+    if lower.startswith("torah_") or lower in {"patriarchs", "twelve_tribes", "postflood_nations", "postflood_root"}:
+      return "torah", sub_period_val or lower
+    # Шофтим: shoftim_generations -> shoftim
+    if lower.startswith("shoftim"):
+      return "shoftim", sub_period_val or lower
+    # Цари разделённые: malakhim_divided_israel/judah -> malakhim_divided
+    if lower.startswith("malakhim_divided"):
+      return "malakhim_divided", sub_period_val or lower.replace("malakhim_divided_", "")
+    # Таннаим/Амораим сокращения
+    if lower in {"tanna_second"}:
+      return "tannaim_temple", sub_period_val
+    if lower in {"tanna_post"}:
+      return "tannaim_post_temple", sub_period_val
+    if lower in {"amora_eretz"}:
+      return "amoraim_israel", sub_period_val
+    if lower in {"amora_bavel"}:
+      return "amoraim_babylonia", sub_period_val
+    # Савораим/Гаоним подварианты
+    if lower.startswith("savora_") or lower.startswith("savoraim_"):
+      return "savoraim", sub_period_val or lower
+    if lower.startswith("gaon_") or lower.startswith("gaonim_"):
+      return "geonim", sub_period_val or lower
+    return period_val, sub_period_val
+
+  def _infer_period_from_sub(sub_period_val: Optional[str]) -> Optional[str]:
+    """Best-effort derive period from subPeriod if period is missing."""
+    if not sub_period_val:
+      return None
+    sub = sub_period_val.lower()
+    if sub.startswith("preflood") or sub.startswith("flood_") or sub.startswith("postflood") or sub.startswith("patriarchs") or sub.startswith("tribe_"):
+      return "torah"
+    if sub.startswith("shoftim"):
+      return "shoftim"
+    if sub.startswith("tanna_temple") or sub.startswith("tanna_second"):
+      return "tannaim_temple"
+    if sub.startswith("tanna_post"):
+      return "tannaim_post_temple"
+    if sub.startswith("amora_israel"):
+      return "amoraim_israel"
+    if sub.startswith("amora_bav"):
+      return "amoraim_babylonia"
+    if sub.startswith("savora"):
+      return "savoraim"
+    if sub.startswith("gaon_sura") or sub.startswith("gaon_pumbedita") or sub.startswith("gaon_israel"):
+      return "geonim"
+    return None
+
   for p in profiles:
     slug = p.get("slug") if isinstance(p, dict) else None
     if not slug:
@@ -113,8 +166,21 @@ async def get_timeline_people(
               region_val = author_row.links.get("region")
             if not generation_val and isinstance(author_row.links, dict):
               generation_val = author_row.links.get("generation")
-      except Exception as exc:
-        logger.warning("timeline:author_fallback failed", extra={"slug": slug, "error": str(exc)})
+    except Exception as exc:
+      logger.warning("timeline:author_fallback failed", extra={"slug": slug, "error": str(exc)})
+
+    # Если период не задан, попробуем вывести его из subPeriod
+    if not period_val:
+      period_val = _infer_period_from_sub(sub_period_val)
+
+    period_val, sub_period_val = _normalize_period(period_val, sub_period_val)
+
+    # Если поколение не задано, но номер зашит в sub_period (genN) — извлечём.
+    if generation_val is None and isinstance(sub_period_val, str):
+      import re
+      m = re.search(r"gen(\d+)", sub_period_val)
+      if m:
+        generation_val = int(m.group(1))
 
     # As last resort, hit full profile to extract period/lifespan
     if not period_val or period_val == "achronim" or not p.get("title_ru"):
@@ -199,5 +265,5 @@ async def get_timeline_people(
   periods_config = getattr(profile_service, "periods_config", lambda: [])()
   return TimelineResponse(
     people=people,
-    periods=[p.model_dump() if hasattr(p, "model_dump") else p for p in periods_config],
+    periods=[p.model_dump() if hasattr(p, "model_dump") else p for p in periods_config] if periods_config else [],
   )
