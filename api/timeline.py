@@ -166,8 +166,8 @@ async def get_timeline_people(
               region_val = author_row.links.get("region")
             if not generation_val and isinstance(author_row.links, dict):
               generation_val = author_row.links.get("generation")
-    except Exception as exc:
-      logger.warning("timeline:author_fallback failed", extra={"slug": slug, "error": str(exc)})
+      except Exception as exc:
+        logger.warning("timeline:author_fallback failed", extra={"slug": slug, "error": str(exc)})
 
     # Если период не задан, попробуем вывести его из subPeriod
     if not period_val:
