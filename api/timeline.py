@@ -72,36 +72,37 @@ async def get_timeline_people(
     if not period_val:
       return None, sub_period_val
     lower = period_val.lower()
+    base = lower.split(":")[0]
     # Танах: любые torah_* -> torah
-    if lower.startswith("torah_") or lower in {"patriarchs", "twelve_tribes", "postflood_nations", "postflood_root"}:
+    if base.startswith("torah_") or base in {"patriarchs", "twelve_tribes", "postflood_nations", "postflood_root", "torah"}:
       return "torah", sub_period_val or lower
     # Шофтим: shoftim_generations -> shoftim
-    if lower.startswith("shoftim"):
+    if base.startswith("shoftim"):
       return "shoftim", sub_period_val or lower
     # Цари разделённые: malakhim_divided_israel/judah -> malakhim_divided
-    if lower.startswith("malakhim_divided"):
-      return "malakhim_divided", sub_period_val or lower.replace("malakhim_divided_", "")
+    if base.startswith("malakhim_divided"):
+      return "malakhim_divided", sub_period_val or base.replace("malakhim_divided_", "")
     # Таннаим/Амораим сокращения
-    if lower in {"tanna_second"}:
+    if base in {"tanna_second"}:
       return "tannaim_temple", sub_period_val
-    if lower in {"tanna_post"}:
+    if base in {"tanna_post"}:
       return "tannaim_post_temple", sub_period_val
-    if lower in {"amora_eretz"}:
+    if base in {"amora_eretz"}:
       return "amoraim_israel", sub_period_val
-    if lower in {"amora_bavel"}:
+    if base in {"amora_bavel"}:
       return "amoraim_babylonia", sub_period_val
     # Савораим/Гаоним подварианты
-    if lower.startswith("savora_") or lower.startswith("savoraim_"):
+    if base.startswith("savora_") or base.startswith("savoraim_"):
       return "savoraim", sub_period_val or lower
-    if lower.startswith("gaon_") or lower.startswith("gaonim_"):
+    if base.startswith("gaon_") or base.startswith("gaonim_"):
       return "geonim", sub_period_val or lower
-    return period_val, sub_period_val
+    return base, sub_period_val
 
   def _infer_period_from_sub(sub_period_val: Optional[str]) -> Optional[str]:
     """Best-effort derive period from subPeriod if period is missing."""
     if not sub_period_val:
       return None
-    sub = sub_period_val.lower()
+    sub = sub_period_val.lower().split(":")[0]
     if sub.startswith("preflood") or sub.startswith("flood_") or sub.startswith("postflood") or sub.startswith("patriarchs") or sub.startswith("tribe_"):
       return "torah"
     if sub.startswith("shoftim"):
