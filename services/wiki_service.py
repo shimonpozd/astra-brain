@@ -102,10 +102,14 @@ class WikiService:
             async with client as c:
                 call_kwargs = {"name": "get_article", "arguments": {"title": title}}
                 try:
-                    result = await c.call_tool(**call_kwargs, raise_on_error=True)  # type: ignore
-                except TypeError:
-                    # Older fastmcp without raise_on_error
                     result = await c.call_tool(**call_kwargs)  # type: ignore
+                except TypeError as exc:
+                    logger.debug(
+                        "fastmcp call_tool kwargs not supported; retrying without extras",
+                        extra={"error": str(exc)},
+                    )
+                    # If any kw problems arise in future, fall back to minimal call
+                    result = await c.call_tool("get_article", {"title": title})  # type: ignore
 
             # Normalise payload
             payload = None
