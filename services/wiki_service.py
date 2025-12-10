@@ -71,31 +71,72 @@ class WikiService:
 
     async def fetch_wikipedia_page_via_mcp(self, mcp_base_url: str, url: str) -> Optional[Dict[str, Any]]:
         """
-        Try to fetch cleaned article content through an MCP Wikipedia server.
-        Expects JSON with 'html' or 'text' fields.
+        Fetch Wikipedia article through an MCP server (tool `get_article`).
+        Works with SSE/stdio endpoints (fastmcp client).
         """
         if not mcp_base_url or not url:
             return None
-        full = mcp_base_url.rstrip("/") + "/resources"
         try:
-            resp = await self.http_client.get(
-                full, params={"uri": url}, headers={"User-Agent": self.user_agent}, timeout=15.0
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            # Try to normalize various possible shapes
-            if isinstance(data, dict) and "data" in data:
-                data = data["data"]
-            if isinstance(data, list) and data:
-                data = data[0]
-            html = None
-            text = None
-            if isinstance(data, dict):
-                html = data.get("html") or data.get("content") or data.get("body")
-                text = data.get("text") or data.get("plain") or data.get("content")
+            from fastmcp.client import Client  # type: ignore
+            from fastmcp.client.transports import infer_transport  # type: ignore
+        except Exception as exc:  # pragma: no cover - optional dependency
+            logger.warning("MCP wikipedia fetch skipped: fastmcp not installed", extra={"error": str(exc)})
+            return None
+
+        try:
+            from urllib.parse import urlparse, unquote
+
+            parsed = urlparse(url)
+            # title = last path segment, underscores -> spaces
+            title = unquote(parsed.path.rsplit("/", 1)[-1]).replace("_", " ").strip()
+            if not title:
+                return None
+
+            transport = infer_transport(mcp_base_url)
+            # Some fastmcp versions do not support timeout in ctor; fallback if needed
+            try:
+                client = Client(transport, timeout=20.0)
+            except TypeError:
+                client = Client(transport)
+
+            async with client as c:
+                call_kwargs = {"name": "get_article", "arguments": {"title": title}}
+                try:
+                    result = await c.call_tool(**call_kwargs, raise_on_error=True)  # type: ignore
+                except TypeError:
+                    # Older fastmcp without raise_on_error
+                    result = await c.call_tool(**call_kwargs)  # type: ignore
+
+            # Normalise payload
+            payload = None
+            html = ""
+            text = ""
+
+            # Prefer explicit data attribute/key
+            payload = getattr(result, "data", None)
+            if payload is None and isinstance(result, dict):
+                payload = result.get("data") or result
+
+            # If payload already has html/text
+            if isinstance(payload, dict):
+                html = payload.get("html") or payload.get("content") or payload.get("body") or ""
+                text = payload.get("text") or payload.get("plain") or payload.get("content") or ""
+
+            # Fallback: parse MCP content blocks
+            if (not html and not text) and hasattr(result, "content"):
+                blocks = getattr(result, "content", []) or []
+                collected = []
+                for blk in blocks:
+                    # fastmcp/mcp TextContent has attribute 'text'
+                    if hasattr(blk, "text"):
+                        collected.append(str(getattr(blk, "text")))
+                    elif isinstance(blk, dict) and "text" in blk:
+                        collected.append(str(blk["text"]))
+                text = " ".join(collected).strip()
+
             if not html and not text:
                 return None
-            return {"html": html or "", "content": text or "", "url": url}
+            return {"html": html or "", "content": text or "", "url": url, "title": title}
         except Exception as exc:
             logger.warning("MCP wikipedia fetch failed", extra={"url": url, "error": str(exc)})
             return None
