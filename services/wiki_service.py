@@ -83,9 +83,9 @@ class WikiService:
             logger.warning("MCP wikipedia fetch skipped: fastmcp not installed", extra={"error": str(exc)})
             return None
 
+        title = None
         try:
             from urllib.parse import urlparse, unquote
-
             parsed = urlparse(url)
             # title = last path segment, underscores -> spaces
             title = unquote(parsed.path.rsplit("/", 1)[-1]).replace("_", " ").strip()
@@ -108,7 +108,6 @@ class WikiService:
                         "fastmcp call_tool kwargs not supported; retrying without extras",
                         extra={"error": str(exc)},
                     )
-                    # If any kw problems arise in future, fall back to minimal call
                     result = await c.call_tool("get_article", {"title": title})  # type: ignore
 
             # Normalise payload
@@ -142,7 +141,10 @@ class WikiService:
                 return None
             return {"html": html or "", "content": text or "", "url": url, "title": title}
         except Exception as exc:
-            logger.warning("MCP wikipedia fetch failed", extra={"url": url, "error": str(exc)})
+            logger.warning(
+                "MCP wikipedia fetch failed",
+                extra={"url": url, "error": str(exc), "mcp_base_url": mcp_base_url},
+            )
             return None
 
     async def fetch_wikipedia_page(self, url: str) -> Optional[Dict[str, Any]]:
