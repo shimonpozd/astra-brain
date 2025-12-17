@@ -73,6 +73,8 @@ TASK_ENV_MAPPING: Dict[str, List[str]] = {
     "PROFILE": ["PROFILE_MODEL", "ASTRA_MODEL_PROFILE"],
     "TIMELINE_BIO": ["TIMELINE_BIO_MODEL", "ASTRA_MODEL_TIMELINE_BIO"],
     "TALMUDIC_CONCEPT_GEN": ["TALMUDIC_CONCEPT_MODEL", "ASTRA_MODEL_TALMUDIC_CONCEPT"],
+    "YIDDISH": ["YIDDISH_MODEL", "ASTRA_MODEL_YIDDISH"],
+    "YIDDISH_ASK": ["YIDDISH_ASK_MODEL", "ASTRA_MODEL_YIDDISH_ASK"],
 }
 
 TASK_OVERRIDE_MAPPING: Dict[str, str] = {
@@ -90,6 +92,8 @@ TASK_OVERRIDE_MAPPING: Dict[str, str] = {
     "PROFILE": "profile",
     "TIMELINE_BIO": "timeline_bio",
     "TALMUDIC_CONCEPT_GEN": "talmudic_concept_gen",
+    "YIDDISH": "yiddish",
+    "YIDDISH_ASK": "yiddish_ask",
 }
 
 
@@ -246,6 +250,7 @@ def get_tooling_config() -> Dict[str, Any]:
             merged[key] = value
         return merged
     return defaults
+
 
 
 

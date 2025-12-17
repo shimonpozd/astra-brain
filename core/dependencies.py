@@ -8,6 +8,8 @@ from brain_service.services.user_service import UserService
 from brain_service.services.xp_service import XpService
 from brain_service.services.achievement_service import AchievementService
 from brain_service.services.talmudic_concept_service import TalmudicConceptService
+from brain_service.services.yiddish_service import YiddishService
+from brain_service.services.wiktionary_yiddish import WiktionaryYiddishService
 
 def get_redis_client(request: Request) -> redis.Redis:
     """Dependency to get the Redis client from the application state."""
@@ -110,6 +112,22 @@ def get_achievement_service(request: Request) -> AchievementService:
     service = getattr(request.app.state, "achievement_service", None)
     if service is None:
         raise HTTPException(status_code=503, detail="Achievement service unavailable")
+    return service
+
+
+def get_yiddish_service(request: Request) -> YiddishService:
+    service = getattr(request.app.state, "yiddish_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="Yiddish service unavailable")
+    return service
+
+
+def get_wiktionary_yiddish_service(request: Request) -> WiktionaryYiddishService:
+    service = getattr(request.app.state, "wiktionary_yiddish_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="Yiddish WordCard service unavailable")
+    if getattr(service, "tool_registry", None) is None:
+        service.tool_registry = getattr(request.app.state, "tool_registry", None)
     return service
 
 

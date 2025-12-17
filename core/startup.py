@@ -24,6 +24,7 @@ from brain_service.services.wiki_service import WikiService
 from brain_service.services.xp_service import XpService
 from brain_service.services.achievement_service import AchievementService
 from brain_service.services.navigation_service import NavigationService
+from brain_service.services.wiktionary_yiddish import WiktionaryYiddishService
 from brain_service.services.profile_service import ProfileService
 from brain_service.services.talmudic_concept_service import TalmudicConceptService
 from domain.chat.tools import ToolRegistry
@@ -31,6 +32,7 @@ from .rate_limiting import setup_rate_limiter
 from .database import create_engine, create_session_factory, shutdown_engine
 from brain_service.models.db import Base
 from brain_service.models import talmudic_concept  # noqa: F401
+from brain_service.models import yiddish  # noqa: F401
 from brain_service.services.user_service import UserService
 from brain_service.services.auth_service import AuthService
 from .config_loader import ensure_config_root
@@ -399,6 +401,18 @@ async def lifespan(app: FastAPI):
         config=config
     )
 
+    # Placeholder for yiddish service (db-backed)
+    from brain_service.services.yiddish_service import YiddishService
+    app.state.yiddish_service = YiddishService(
+        session_factory=app.state.db_session_factory,
+        redis_client=app.state.redis_client,
+    )
+    app.state.wiktionary_yiddish_service = WiktionaryYiddishService(
+        session_factory=app.state.db_session_factory,
+        http_client=app.state.http_client,
+        redis_client=app.state.redis_client,
+    )
+
     # Instantiate summary service
     app.state.summary_service = SummaryService(
         llm_service=app.state.llm_service,
@@ -423,6 +437,7 @@ async def lifespan(app: FastAPI):
 
     # Instantiate and populate the tool registry
     app.state.tool_registry = ToolRegistry()
+    app.state.wiktionary_yiddish_service.tool_registry = app.state.tool_registry
 
     # Instantiate chat service
     app.state.chat_service = ChatService(
@@ -547,6 +562,89 @@ async def lifespan(app: FastAPI):
         name="sefaria_get_lexicon",
         handler=app.state.lexicon_service.get_word_definition_for_tool,
         schema=sefaria_get_lexicon_schema
+    )
+
+    # Wiktionary tool for Yiddish wordcards
+    wiktionary_yiddish_lookup_schema = {
+        "type": "function",
+        "function": {
+            "name": "wiktionary_yiddish_lookup",
+            "description": "Lookup a Yiddish word in English Wiktionary and return a compact RU wordcard. Use for Yiddish vocabulary.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "word": {
+                        "type": "string",
+                        "description": "Yiddish word to look up (Hebrew script)."
+                    },
+                    "lemma_guess": {
+                        "type": "string",
+                        "description": "Optional lemma guess to improve lookup."
+                    },
+                    "pos_guess": {
+                        "type": "string",
+                        "description": "Optional POS guess (e.g., NOUN, VERB, ADJ, ADV, PRON, CONJ)."
+                    },
+                    "ui_lang": {
+                        "type": "string",
+                        "description": "UI language for glosses (default: ru).",
+                        "default": "ru"
+                    },
+                    "allow_llm_fallback": {
+                        "type": "boolean",
+                        "description": "Allow LLM fallback if Wiktionary evidence missing (default: false).",
+                        "default": False
+                    }
+                },
+                "required": ["word"]
+            }
+        }
+    }
+    app.state.tool_registry.register(
+        name="wiktionary_yiddish_lookup",
+        handler=app.state.wiktionary_yiddish_service.get_wordcard_for_tool,
+        schema=wiktionary_yiddish_lookup_schema
+    )
+
+    # Wiktionary tool for Yiddish evidence (no LLM)
+    wiktionary_yiddish_evidence_schema = {
+        "type": "function",
+        "function": {
+            "name": "wiktionary_yiddish_evidence_lookup",
+            "description": "Fetch Yiddish Wiktionary evidence (POS, glosses, forms, etymology) without generating a WordCard.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "word": {
+                        "type": "string",
+                        "description": "Yiddish word to look up (Hebrew script)."
+                    },
+                    "lemma_guess": {
+                        "type": "string",
+                        "description": "Optional lemma guess to improve lookup."
+                    },
+                    "pos_guess": {
+                        "type": "string",
+                        "description": "Optional POS guess (e.g., NOUN, VERB, ADJ, ADV, PRON, CONJ)."
+                    },
+                    "context_sentence": {
+                        "type": "string",
+                        "description": "Optional context sentence to help disambiguation."
+                    },
+                    "ui_lang": {
+                        "type": "string",
+                        "description": "UI language hint (default: ru).",
+                        "default": "ru"
+                    }
+                },
+                "required": ["word"]
+            }
+        }
+    }
+    app.state.tool_registry.register(
+        name="wiktionary_yiddish_evidence_lookup",
+        handler=app.state.wiktionary_yiddish_service.get_evidence_for_tool,
+        schema=wiktionary_yiddish_evidence_schema
     )
 
     if app.state.sefaria_mcp_service:
