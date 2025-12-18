@@ -817,13 +817,25 @@ class WiktionaryYiddishService:
         except LLMConfigError as exc:
             raise HTTPException(status_code=500, detail=f"LLM not configured: {exc}")
 
-        user_msg = user_template.format(
-            word_surface=word_surface,
-            lemma_guess=lemma_guess or "",
-            pos_guess=pos_guess or "",
-            context_sentence=context_sentence or "",
-            ui_lang=ui_lang,
-        )
+        fmt_args = {
+            "word_surface": word_surface,
+            "lemma_guess": lemma_guess or "",
+            "pos_guess": pos_guess or "",
+            "context_sentence": context_sentence or "",
+            "ui_lang": ui_lang,
+            "evidence_json": json.dumps({}, ensure_ascii=False),
+            "lemma": (lemma_guess or word_surface),
+            "pos": (pos_guess or ""),
+            "index": 1,
+        }
+        try:
+            user_msg = user_template.format(**fmt_args)
+        except KeyError as exc:
+            logger.error(
+                "Wordcard user prompt missing placeholder",
+                extra={"missing": str(exc)},
+            )
+            user_msg = f"Evidence (JSON):\n{fmt_args['evidence_json']}\n"
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -889,7 +901,7 @@ class WiktionaryYiddishService:
                         }
                     )
                 api_params["messages"] = messages
-                if last_evidence.get("pos_entries"):
+                if last_evidence:
                     final_params: Dict[str, Any] = {
                         **reasoning_params,
                         "model": model,
