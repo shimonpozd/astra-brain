@@ -17,7 +17,7 @@ from core.middleware import logging_middleware, setup_cors_middleware
 from core.exceptions import setup_exception_handlers
 from core.settings import Settings
 
-from api import admin, chat, study, actions, tts, audio, auth, users, xp, achievements, profile, timeline, highlight_data, llm_router, talmudic_concepts_admin
+from api import admin, chat, study, actions, tts, audio, auth, users, xp, achievements, profile, timeline, highlight_data, llm_router, talmudic_concepts_admin, yiddish_admin
 from api import yiddish
 
 # Initialize the FastAPI app with the lifespan manager
@@ -41,6 +41,7 @@ setup_exception_handlers(app)
 
 # Include routers
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(yiddish_admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(study.router, prefix="/api/study", tags=["study"])
 app.include_router(profile.router, prefix="/api", tags=["profile"])
