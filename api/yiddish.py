@@ -203,6 +203,7 @@ async def yiddish_wordcard(
     include_llm_output: bool = False,
     force_refresh: bool = False,
     allow_llm_fallback: bool = False,
+    persist: bool = True,
     current_user: User = Depends(get_current_user),
     wiktionary_service: WiktionaryYiddishService = Depends(get_wiktionary_yiddish_service),
 ):
@@ -219,4 +220,5 @@ async def yiddish_wordcard(
         include_llm_output=include_llm_output,
         force_refresh=force_refresh,
         allow_llm_fallback=allow_llm_fallback,
+        persist=persist,
     )

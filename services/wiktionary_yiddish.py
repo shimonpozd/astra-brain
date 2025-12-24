@@ -74,6 +74,7 @@ class WiktionaryYiddishService:
         force_refresh: bool = False,
         allow_llm_fallback: bool = False,
         redirect_depth: int = 0,
+        persist: bool = True,
     ) -> Dict[str, Any]:
         """
         Main entry: return WordCard JSON, loading from DB cache or generating from Wiktionary.
@@ -94,13 +95,14 @@ class WiktionaryYiddishService:
                         ui_lang=ui_lang,
                         evidence=evidence,
                     )
-                    await self._persist_wordcard(
-                        lemma_key=cached.get("lemma") or base_lemma,
-                        ui_lang=ui_lang,
-                        pos_default=cached.get("pos_default"),
-                        evidence=evidence,
-                        wordcard=cached,
-                    )
+                    if persist:
+                        await self._persist_wordcard(
+                            lemma_key=cached.get("lemma") or base_lemma,
+                            ui_lang=ui_lang,
+                            pos_default=cached.get("pos_default"),
+                            evidence=evidence,
+                            wordcard=cached,
+                        )
                 if cached:
                     return cached
         if self.tool_registry:
@@ -118,13 +120,14 @@ class WiktionaryYiddishService:
                 ui_lang=ui_lang,
                 evidence=last_evidence,
             )
-            await self._persist_wordcard(
-                lemma_key=base_lemma,
-                ui_lang=ui_lang,
-                pos_default=wordcard.get("pos_default"),
-                evidence=last_evidence or {},
-                wordcard=wordcard,
-            )
+            if persist:
+                await self._persist_wordcard(
+                    lemma_key=base_lemma,
+                    ui_lang=ui_lang,
+                    pos_default=wordcard.get("pos_default"),
+                    evidence=last_evidence or {},
+                    wordcard=wordcard,
+                )
             if include_evidence or include_llm_output:
                 debug_payload: Dict[str, Any] = {}
                 if include_evidence:
