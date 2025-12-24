@@ -3,10 +3,13 @@ import json
 import logging
 from typing import Dict, List, Any
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
+from sqlalchemy import select, or_
 
+from brain_service.core.database import session_scope
 from brain_service.core.dependencies import get_current_user, get_yiddish_service, get_wiktionary_yiddish_service
 from brain_service.models.db import User
+from brain_service.models.yiddish import YiddishWordCard
 from brain_service.services.yiddish_service import YiddishService
 from brain_service.services.wiktionary_yiddish import WiktionaryYiddishService
 from config.prompts import get_prompt
@@ -19,6 +22,13 @@ logger = logging.getLogger(__name__)
 _user_queue: Dict[str, List[Dict[str, Any]]] = {}
 _user_attestations: Dict[str, List[Dict[str, Any]]] = {}
 _user_vocab: Dict[str, Dict[str, Any]] = {}
+
+
+def _get_session_factory(request: Request):
+    session_factory = getattr(request.app.state, "db_session_factory", None)
+    if session_factory is None:
+        raise HTTPException(status_code=503, detail="Database session factory unavailable")
+    return session_factory
 
 
 def _load_sicha_file(sicha_id: str):
@@ -88,6 +98,40 @@ async def update_queue(
         "source_pid": payload.get("source_pid"),
     }
     return await yiddish_service.update_queue(str(current_user.id), action, entry)
+
+
+@router.post("/yiddish/wordcards/lookup")
+async def lookup_wordcards(
+    payload: Dict[str, Any],
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    ui_lang: str = "ru",
+    version: int = 1,
+):
+    lemmas = payload.get("lemmas") or []
+    surfaces = payload.get("surfaces") or []
+    if not isinstance(lemmas, list) or not isinstance(surfaces, list):
+        raise HTTPException(status_code=400, detail="Payload must include lemmas/surfaces lists")
+    keys = list({*(str(l).strip() for l in lemmas if str(l).strip()), *(str(s).strip() for s in surfaces if str(s).strip())})
+    if not keys:
+        raise HTTPException(status_code=400, detail="Payload must include lemmas or surfaces list")
+
+    session_factory = _get_session_factory(request)
+    async with session_scope(session_factory) as session:
+        result = await session.execute(
+            select(YiddishWordCard).where(
+                or_(YiddishWordCard.lemma.in_(keys), YiddishWordCard.word_surface.in_(keys)),
+                YiddishWordCard.ui_lang == ui_lang,
+                YiddishWordCard.source == "wiktionary",
+                YiddishWordCard.version == version,
+            )
+        )
+        items = []
+        for row in result.scalars().all():
+            if row.data:
+                items.append(row.data)
+
+    return {"ok": True, "items": items}
 
 
 @router.post("/yiddish/exam/start")
