@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, or_, select, update
+from sqlalchemy.dialects.postgresql import insert
 
 from brain_service.core.database import session_scope
 from brain_service.core.dependencies import require_admin_user
@@ -261,29 +262,18 @@ async def upsert_yiddish_wordcards_batch(
             word_surface = normalized.get("word_surface") or lemma
 
             result = await session.execute(
-                select(YiddishWordCard).where(
+                select(YiddishWordCard.id).where(
                     YiddishWordCard.lemma == lemma,
                     YiddishWordCard.ui_lang == ui_lang,
                     YiddishWordCard.source == "wiktionary",
                     YiddishWordCard.version == (version or 1),
                 )
             )
-            existing = result.scalar_one_or_none()
-            if existing:
-                await session.execute(
-                    update(YiddishWordCard)
-                    .where(YiddishWordCard.id == existing.id)
-                    .values(
-                        data=normalized,
-                        evidence=evidence if evidence is not None else existing.evidence,
-                        pos_default=pos_default,
-                        word_surface=word_surface,
-                        retrieved_at=datetime.now(timezone.utc),
-                    )
-                )
-                updated += 1
-            else:
-                card = YiddishWordCard(
+            existing_id = result.scalar_one_or_none()
+
+            stmt = (
+                insert(YiddishWordCard)
+                .values(
                     lemma=lemma,
                     lang="yi",
                     ui_lang=ui_lang,
@@ -295,7 +285,22 @@ async def upsert_yiddish_wordcards_batch(
                     data=normalized,
                     evidence=evidence,
                 )
-                session.add(card)
+                .on_conflict_do_update(
+                    index_elements=["lemma", "lang", "source", "version"],
+                    set_={
+                        "data": normalized,
+                        "evidence": evidence,
+                        "pos_default": pos_default,
+                        "word_surface": word_surface,
+                        "retrieved_at": datetime.now(timezone.utc),
+                    },
+                )
+            )
+            await session.execute(stmt)
+
+            if existing_id:
+                updated += 1
+            else:
                 created += 1
 
     return {"ok": True, "created": created, "updated": updated, "errors": errors}
