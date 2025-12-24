@@ -35,6 +35,80 @@ def _normalize_wordcard_payload(data: Dict[str, Any], *, ui_lang: str, version: 
     return data
 
 
+def _is_empty_value(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, tuple, set)):
+        return len(value) == 0
+    if isinstance(value, dict):
+        return len(value) == 0
+    return False
+
+
+def _merge_unique_list(items: List[Any], key_fn) -> List[Any]:
+    seen = set()
+    result = []
+    for item in items:
+        key = key_fn(item)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+    return result
+
+
+def _merge_wordcard(existing: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str, Any]:
+    merged = {**existing}
+    for key, value in incoming.items():
+        if key in {"popup", "senses", "sources", "flags"}:
+            continue
+        if _is_empty_value(value):
+            continue
+        merged[key] = value
+
+    existing_popup = existing.get("popup") or {}
+    incoming_popup = incoming.get("popup") or {}
+    existing_glosses = existing_popup.get("gloss_ru_short_list") or []
+    incoming_glosses = incoming_popup.get("gloss_ru_short_list") or []
+    combined_glosses = _merge_unique_list(existing_glosses + incoming_glosses, lambda g: str(g).strip())
+    if combined_glosses:
+        merged["popup"] = {**existing_popup, **incoming_popup, "gloss_ru_short_list": combined_glosses}
+    elif incoming_popup:
+        merged["popup"] = {**existing_popup, **incoming_popup}
+
+    existing_senses = existing.get("senses") or []
+    incoming_senses = incoming.get("senses") or []
+    if incoming_senses:
+        def sense_key(sense: Dict[str, Any]) -> str:
+            return (
+                str(sense.get("sense_id") or "").strip().lower()
+                or str(sense.get("gloss_ru_short") or sense.get("gloss_ru_full") or sense.get("source_gloss_en") or "").strip().lower()
+            )
+        merged["senses"] = _merge_unique_list(existing_senses + incoming_senses, sense_key)
+    elif existing_senses:
+        merged["senses"] = existing_senses
+
+    existing_sources = existing.get("sources") or []
+    incoming_sources = incoming.get("sources") or []
+    if existing_sources or incoming_sources:
+        def source_key(src: Dict[str, Any]) -> str:
+            return f"{src.get('type')}|{src.get('site')}|{src.get('title')}|{src.get('retrieved_at')}"
+        merged["sources"] = _merge_unique_list(existing_sources + incoming_sources, source_key)
+
+    existing_flags = existing.get("flags") or {}
+    incoming_flags = incoming.get("flags") or {}
+    merged_flags = {**existing_flags, **incoming_flags}
+    glosses_present = bool(combined_glosses)
+    senses_present = bool(merged.get("senses"))
+    if glosses_present or senses_present:
+        merged_flags.setdefault("needs_review", False)
+        merged_flags["evidence_missing"] = False
+    merged["flags"] = merged_flags
+    return merged
+
+
 @router.get("/yiddish/wordcards")
 async def list_yiddish_wordcards(
     request: Request,
@@ -300,6 +374,18 @@ async def upsert_yiddish_wordcards_batch(
                 )
             )
             existing_id = result.scalar_one_or_none()
+            existing_data: Optional[Dict[str, Any]] = None
+            if existing_id:
+                existing_row = await session.execute(
+                    select(YiddishWordCard).where(YiddishWordCard.id == existing_id)
+                )
+                existing_card = existing_row.scalar_one_or_none()
+                if existing_card and isinstance(existing_card.data, dict):
+                    existing_data = existing_card.data
+
+            merged_data = _merge_wordcard(existing_data or {}, normalized) if existing_data else normalized
+            pos_default = merged_data.get("pos_default")
+            word_surface = merged_data.get("word_surface") or word_surface
 
             stmt = (
                 insert(YiddishWordCard)
@@ -312,13 +398,13 @@ async def upsert_yiddish_wordcards_batch(
                     word_surface=word_surface,
                     pos_default=pos_default,
                     retrieved_at=datetime.now(timezone.utc),
-                    data=normalized,
+                    data=merged_data,
                     evidence=evidence,
                 )
                 .on_conflict_do_update(
                     index_elements=["lemma", "lang", "source", "version"],
                     set_={
-                        "data": normalized,
+                        "data": merged_data,
                         "evidence": evidence,
                         "pos_default": pos_default,
                         "word_surface": word_surface,
