@@ -240,7 +240,12 @@ async def upsert_yiddish_wordcards_batch(
             if not isinstance(item, dict):
                 errors.append({"index": idx, "error": "item must be object"})
                 continue
-            data = item.get("data") if "data" in item else item
+            if "data" in item:
+                data = item.get("data")
+            elif "wordcard" in item:
+                data = item.get("wordcard")
+            else:
+                data = item
             evidence = item.get("evidence") if isinstance(item.get("evidence"), dict) else None
             if not isinstance(data, dict):
                 errors.append({"index": idx, "error": "data must be object"})
