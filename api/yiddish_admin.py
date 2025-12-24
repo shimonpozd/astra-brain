@@ -42,6 +42,7 @@ async def list_yiddish_wordcards(
     ui_lang: str = "ru",
     prefix: Optional[str] = Query(default=None),
     q: Optional[str] = Query(default=None),
+    no_glosses: bool = Query(default=False),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     version: Optional[int] = Query(default=1, ge=1),
@@ -58,6 +59,9 @@ async def list_yiddish_wordcards(
     if q:
         q_like = f"%{q}%"
         filters.append(or_(YiddishWordCard.lemma.ilike(q_like), YiddishWordCard.word_surface.ilike(q_like)))
+    if no_glosses:
+        gloss_path = YiddishWordCard.data["popup"]["gloss_ru_short_list"]
+        filters.append(or_(gloss_path.is_(None), func.jsonb_array_length(gloss_path) == 0))
 
     async with session_scope(session_factory) as session:
         total = await session.scalar(select(func.count()).select_from(YiddishWordCard).where(*filters))
@@ -217,6 +221,32 @@ async def update_yiddish_wordcard(
         )
 
     return {"ok": True, "data": data}
+
+
+@router.delete("/yiddish/wordcards/{lemma}")
+async def delete_yiddish_wordcard(
+    lemma: str,
+    request: Request,
+    _: User = Depends(require_admin_user),
+    ui_lang: str = "ru",
+    version: Optional[int] = Query(default=1, ge=1),
+):
+    session_factory = _get_session_factory(request)
+    async with session_scope(session_factory) as session:
+        result = await session.execute(
+            select(YiddishWordCard).where(
+                YiddishWordCard.lemma == lemma,
+                YiddishWordCard.ui_lang == ui_lang,
+                YiddishWordCard.source == "wiktionary",
+                YiddishWordCard.version == version,
+            )
+        )
+        existing = result.scalar_one_or_none()
+        if not existing:
+            raise HTTPException(status_code=404, detail="WordCard not found")
+        await session.delete(existing)
+
+    return {"ok": True, "deleted": lemma}
 
 
 @router.post("/yiddish/wordcards/batch")
