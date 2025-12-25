@@ -1063,6 +1063,9 @@ class WiktionaryYiddishService:
         senses = wordcard.get("senses") or []
         if isinstance(senses, list) and senses:
             normalized_senses = []
+            popup_glosses = []
+            if isinstance(wordcard.get("popup"), dict):
+                popup_glosses = wordcard["popup"].get("gloss_ru_short_list") or []
             for idx, sense in enumerate(senses, start=1):
                 if not isinstance(sense, dict):
                     continue
@@ -1079,6 +1082,12 @@ class WiktionaryYiddishService:
                     sense["gloss_ru_short"] = sense.get("gloss_ru") or ""
                 if "gloss_ru" in sense and not sense.get("gloss_ru_full"):
                     sense["gloss_ru_full"] = sense.get("gloss_ru") or sense.get("gloss_ru_short") or ""
+                if not sense.get("gloss_ru_short") and popup_glosses:
+                    sense["gloss_ru_short"] = popup_glosses[0]
+                if not sense.get("gloss_ru_full") and popup_glosses:
+                    sense["gloss_ru_full"] = "; ".join(
+                        [g.strip() for g in popup_glosses if isinstance(g, str) and g.strip()]
+                    )
                 gloss_en_list = sense.get("gloss_en_list")
                 if isinstance(gloss_en_list, list) and gloss_en_list and not sense.get("source_gloss_en"):
                     first_en = next((g for g in gloss_en_list if isinstance(g, str) and g.strip()), "")
