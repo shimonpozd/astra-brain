@@ -1066,10 +1066,24 @@ class WiktionaryYiddishService:
             for idx, sense in enumerate(senses, start=1):
                 if not isinstance(sense, dict):
                     continue
+                gloss_ru_list = sense.get("gloss_ru_list")
+                if isinstance(gloss_ru_list, list) and gloss_ru_list:
+                    first_ru = next((g for g in gloss_ru_list if isinstance(g, str) and g.strip()), "")
+                    if first_ru and not sense.get("gloss_ru_short"):
+                        sense["gloss_ru_short"] = first_ru
+                    if not sense.get("gloss_ru_full"):
+                        sense["gloss_ru_full"] = "; ".join(
+                            [g.strip() for g in gloss_ru_list if isinstance(g, str) and g.strip()]
+                        )
                 if "gloss_ru" in sense and not sense.get("gloss_ru_short"):
                     sense["gloss_ru_short"] = sense.get("gloss_ru") or ""
                 if "gloss_ru" in sense and not sense.get("gloss_ru_full"):
                     sense["gloss_ru_full"] = sense.get("gloss_ru") or sense.get("gloss_ru_short") or ""
+                gloss_en_list = sense.get("gloss_en_list")
+                if isinstance(gloss_en_list, list) and gloss_en_list and not sense.get("source_gloss_en"):
+                    first_en = next((g for g in gloss_en_list if isinstance(g, str) and g.strip()), "")
+                    if first_en:
+                        sense["source_gloss_en"] = first_en
                 sense_id = sense.get("sense_id")
                 if not isinstance(sense_id, str) or ":" not in sense_id:
                     pos_val = wordcard.get("pos_default") or "UNKNOWN"
