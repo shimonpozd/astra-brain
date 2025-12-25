@@ -1,11 +1,13 @@
 import json
 import logging
+import random
+import uuid
 from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import redis.asyncio as redis
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from brain_service.models.yiddish import (
@@ -13,6 +15,7 @@ from brain_service.models.yiddish import (
     YiddishQueueItem,
     YiddishVocabEntry,
     YiddishSichaProgress,
+    YiddishWordCard,
 )
 from brain_service.core.database import session_scope
 
@@ -245,3 +248,150 @@ class YiddishService:
                 "senses": senses,
                 "attestations": [],
             }
+
+    async def generate_mahjong_exam(self, user_id: str, min_words: int = 8, max_words: int = 12) -> Dict[str, Any]:
+        min_words = max(2, min_words)
+        max_words = max(min_words, max_words)
+        target_words = min(max_words, max(min_words, 10))
+
+        async with session_scope(self.session_factory) as session:
+            queue_rows = await session.execute(
+                select(YiddishQueueItem.lemma)
+                .where(YiddishQueueItem.user_id == user_id)
+                .order_by(YiddishQueueItem.created_at.desc())
+            )
+            queue_lemmas = [row[0] for row in queue_rows.all() if row[0]]
+
+            recent_rows = await session.execute(
+                select(YiddishAttestation.lemma)
+                .where(YiddishAttestation.user_id == user_id)
+                .order_by(YiddishAttestation.created_at.desc())
+                .limit(100)
+            )
+            recent_lemmas = [row[0] for row in recent_rows.all() if row[0]]
+
+            if not recent_lemmas:
+                vocab_rows = await session.execute(
+                    select(YiddishVocabEntry.lemma)
+                    .where(YiddishVocabEntry.user_id == user_id)
+                    .order_by(YiddishVocabEntry.last_seen_at.desc().nullslast())
+                    .limit(100)
+                )
+                recent_lemmas = [row[0] for row in vocab_rows.all() if row[0]]
+
+            candidate_lemmas: List[str] = []
+            seen = set()
+            for lemma in queue_lemmas + recent_lemmas:
+                if lemma in seen:
+                    continue
+                seen.add(lemma)
+                candidate_lemmas.append(lemma)
+
+            wordcard_map: Dict[str, Dict[str, Any]] = {}
+            if candidate_lemmas:
+                result = await session.execute(
+                    select(YiddishWordCard)
+                    .where(
+                        YiddishWordCard.lemma.in_(candidate_lemmas),
+                        YiddishWordCard.ui_lang == "ru",
+                        YiddishWordCard.source == "wiktionary",
+                        YiddishWordCard.version == 1,
+                    )
+                )
+                for row in result.scalars().all():
+                    data = row.data or {}
+                    popup = data.get("popup") or {}
+                    glosses = popup.get("gloss_ru_short_list") if isinstance(popup, dict) else None
+                    if not glosses:
+                        glosses = []
+                        for sense in data.get("senses") or []:
+                            gloss = sense.get("gloss_ru_short") or sense.get("gloss_ru_full")
+                            if gloss:
+                                glosses.append(gloss)
+                    glosses = [g for g in glosses if isinstance(g, str) and g.strip()]
+                    word_surface = row.word_surface or data.get("word_surface")
+                    if not word_surface or not glosses:
+                        continue
+                    wordcard_map[row.lemma] = {
+                        "lemma": row.lemma,
+                        "word_surface": word_surface,
+                        "gloss": glosses[0],
+                        "pos": row.pos_default or data.get("pos_default"),
+                    }
+
+            selected_words: List[Dict[str, Any]] = []
+            for lemma in candidate_lemmas:
+                if len(selected_words) >= target_words:
+                    break
+                card = wordcard_map.get(lemma)
+                if not card:
+                    continue
+                selected_words.append(card)
+
+            if len(selected_words) < min_words:
+                needed = min_words - len(selected_words)
+                random_rows = await session.execute(
+                    select(YiddishWordCard)
+                    .where(
+                        YiddishWordCard.ui_lang == "ru",
+                        YiddishWordCard.source == "wiktionary",
+                        YiddishWordCard.version == 1,
+                    )
+                    .order_by(func.random())
+                    .limit(needed * 3)
+                )
+                for row in random_rows.scalars().all():
+                    if len(selected_words) >= min_words:
+                        break
+                    if any(item["lemma"] == row.lemma for item in selected_words):
+                        continue
+                    data = row.data or {}
+                    popup = data.get("popup") or {}
+                    glosses = popup.get("gloss_ru_short_list") if isinstance(popup, dict) else None
+                    if not glosses:
+                        glosses = []
+                        for sense in data.get("senses") or []:
+                            gloss = sense.get("gloss_ru_short") or sense.get("gloss_ru_full")
+                            if gloss:
+                                glosses.append(gloss)
+                    glosses = [g for g in glosses if isinstance(g, str) and g.strip()]
+                    word_surface = row.word_surface or data.get("word_surface")
+                    if not word_surface or not glosses:
+                        continue
+                    selected_words.append(
+                        {
+                            "lemma": row.lemma,
+                            "word_surface": word_surface,
+                            "gloss": glosses[0],
+                            "pos": row.pos_default or data.get("pos_default"),
+                        }
+                    )
+
+        tiles: List[Dict[str, Any]] = []
+        for item in selected_words[:max_words]:
+            match_id = item["lemma"]
+            pos = item.get("pos")
+            tiles.append(
+                {
+                    "id": f"t-{uuid.uuid4().hex}",
+                    "match_id": match_id,
+                    "type": "yi",
+                    "content": item["word_surface"],
+                    "pos": pos,
+                }
+            )
+            tiles.append(
+                {
+                    "id": f"t-{uuid.uuid4().hex}",
+                    "match_id": match_id,
+                    "type": "ru",
+                    "content": item["gloss"],
+                    "pos": pos,
+                }
+            )
+
+        random.shuffle(tiles)
+        return {
+            "exam_id": f"mahjong-{uuid.uuid4().hex}",
+            "tiles": tiles,
+        }

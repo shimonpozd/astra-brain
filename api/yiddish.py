@@ -147,6 +147,20 @@ async def start_exam(
     return await yiddish_service.start_exam(str(current_user.id), items)
 
 
+@router.post("/yiddish/exam/generate")
+async def generate_exam(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+    yiddish_service: YiddishService = Depends(get_yiddish_service),
+):
+    """
+    Generate Mahjong-style tiles for Yiddish matching.
+    """
+    min_words = payload.get("min_words", 8)
+    max_words = payload.get("max_words", 12)
+    return await yiddish_service.generate_mahjong_exam(str(current_user.id), min_words=min_words, max_words=max_words)
+
+
 @router.get("/yiddish/vocab/{lemma}")
 async def get_vocab(
     lemma: str,
