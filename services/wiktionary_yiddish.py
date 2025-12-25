@@ -1017,7 +1017,8 @@ class WiktionaryYiddishService:
         if re.search(r"[\u0590-\u05FF]", translit_ru):
             wordcard["translit_ru"] = ""
 
-        if "version" not in wordcard:
+        version_val = wordcard.get("version")
+        if not isinstance(version_val, int):
             wordcard["version"] = self.wordcard_version
 
         if "morphology" not in wordcard:
@@ -1031,6 +1032,36 @@ class WiktionaryYiddishService:
             wordcard["popup"]["gloss_ru_short_list"] = []
 
         wordcard.setdefault("senses", [])
+
+        # Fallback: if LLM returned no senses/glosses, try to seed from evidence.
+        if not wordcard["senses"] and not wordcard["popup"].get("gloss_ru_short_list"):
+            gloss_candidates: List[str] = []
+            for val in evidence.get("hebrew_glosses") or []:
+                if isinstance(val, str) and val.strip():
+                    gloss_candidates.append(val.strip())
+            for entry in evidence.get("pos_entries") or []:
+                for val in entry.get("gloss_en_list") or []:
+                    if isinstance(val, str) and val.strip():
+                        gloss_candidates.append(val.strip())
+            if gloss_candidates:
+                uniq = []
+                for g in gloss_candidates:
+                    if g not in uniq:
+                        uniq.append(g)
+                wordcard["popup"]["gloss_ru_short_list"] = uniq[:3]
+                pos_val = wordcard.get("pos_default") or ""
+                senses = []
+                for idx, gloss in enumerate(uniq[:2], start=1):
+                    senses.append(
+                        {
+                            "sense_id": f"{lemma}:{pos_val or 'UNKNOWN'}:{idx}",
+                            "gloss_ru_short": gloss,
+                            "gloss_ru_full": gloss,
+                            "source_gloss_en": gloss,
+                            "confidence": 0.2,
+                        }
+                    )
+                wordcard["senses"] = senses
 
         flags = wordcard.get("flags") if isinstance(wordcard.get("flags"), dict) else {}
         if "needs_review" not in flags:
