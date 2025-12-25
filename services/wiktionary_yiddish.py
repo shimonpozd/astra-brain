@@ -996,7 +996,8 @@ class WiktionaryYiddishService:
         wordcard["schema"] = "astra.yiddish.wordcard.v1"
         wordcard.setdefault("lang", "yi")
         wordcard.setdefault("ui_lang", ui_lang)
-        wordcard.setdefault("word_surface", word_surface)
+        if not wordcard.get("word_surface"):
+            wordcard["word_surface"] = word_surface
 
         lemma = wordcard.get("lemma") or lemma_fallback or word_surface
         wordcard["lemma"] = lemma
@@ -1032,6 +1033,23 @@ class WiktionaryYiddishService:
             wordcard["popup"]["gloss_ru_short_list"] = []
 
         wordcard.setdefault("senses", [])
+
+        senses = wordcard.get("senses") or []
+        if isinstance(senses, list) and senses:
+            normalized_senses = []
+            for idx, sense in enumerate(senses, start=1):
+                if not isinstance(sense, dict):
+                    continue
+                if "gloss_ru" in sense and not sense.get("gloss_ru_short"):
+                    sense["gloss_ru_short"] = sense.get("gloss_ru") or ""
+                if "gloss_ru" in sense and not sense.get("gloss_ru_full"):
+                    sense["gloss_ru_full"] = sense.get("gloss_ru") or sense.get("gloss_ru_short") or ""
+                sense_id = sense.get("sense_id")
+                if not isinstance(sense_id, str) or ":" not in sense_id:
+                    pos_val = wordcard.get("pos_default") or "UNKNOWN"
+                    sense["sense_id"] = f"{lemma}:{pos_val}:{idx}"
+                normalized_senses.append(sense)
+            wordcard["senses"] = normalized_senses
 
         # Fallback: if LLM returned no senses/glosses, try to seed from evidence.
         if not wordcard["senses"] and not wordcard["popup"].get("gloss_ru_short_list"):
@@ -1069,6 +1087,11 @@ class WiktionaryYiddishService:
         if "evidence_missing" not in flags:
             flags["evidence_missing"] = not bool(evidence.get("pos_entries"))
         wordcard["flags"] = flags
+
+        if flags.get("evidence_missing") and wordcard.get("popup"):
+            glosses = wordcard["popup"].get("gloss_ru_short_list") or []
+            if any(isinstance(g, str) and ("неизвест" in g.lower() or "нет слова" in g.lower()) for g in glosses):
+                wordcard["popup"]["gloss_ru_short_list"] = []
 
         sources = wordcard.get("sources")
         if not sources or not isinstance(sources, list) or any(not isinstance(s, dict) for s in sources):
