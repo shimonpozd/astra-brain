@@ -33,18 +33,34 @@ class YiddishService:
     def _load_static_sicha(self, sicha_id: str) -> Dict[str, Any]:
         file_path = self._data_root / f"{sicha_id}.json"
         if file_path.exists():
-            return json.loads(file_path.read_text(encoding="utf-8"))
+            data = json.loads(file_path.read_text(encoding="utf-8"))
+            if (data.get("meta", {}) or {}).get("lang") != "ru":
+                return data
 
         for candidate in sorted(self._data_root.glob("*.json")):
             try:
                 data = json.loads(candidate.read_text(encoding="utf-8"))
             except Exception:
                 continue
-            if data.get("sicha_id") == sicha_id:
+            if data.get("sicha_id") == sicha_id and (data.get("meta", {}) or {}).get("lang") != "ru":
                 return data
 
         fallback = self._data_root / "page_0001.json"
         return json.loads(fallback.read_text(encoding="utf-8"))
+
+    def _load_static_sicha_ru(self, sicha_id: str) -> Optional[Dict[str, Any]]:
+        ru_path = self._data_root / f"{sicha_id}_ru.json"
+        if ru_path.exists():
+            return json.loads(ru_path.read_text(encoding="utf-8"))
+
+        for candidate in sorted(self._data_root.glob("*.json")):
+            try:
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if data.get("sicha_id") == sicha_id and (data.get("meta", {}) or {}).get("lang") == "ru":
+                return data
+        return None
 
     def _ensure_tokens(self, data: Dict[str, Any]) -> None:
         """
@@ -79,7 +95,11 @@ class YiddishService:
                 data = json.loads(candidate.read_text(encoding="utf-8"))
             except Exception:
                 continue
+            if candidate.stem.endswith("_ru"):
+                continue
             meta = data.get("meta", {}) or {}
+            if meta.get("lang") == "ru":
+                continue
             sicha_id = data.get("sicha_id") or candidate.stem
             title = data.get("title")
             if not title:
@@ -102,6 +122,7 @@ class YiddishService:
 
     async def get_sicha(self, sicha_id: str, user_id: str) -> Dict[str, Any]:
         data = self._load_static_sicha(sicha_id)
+        ru_data = self._load_static_sicha_ru(sicha_id)
         self._ensure_tokens(data)
         # Pull learned map from vocab
         learned_map: Dict[str, List[str]] = {}
@@ -112,7 +133,7 @@ class YiddishService:
             for lemma, sense_id in result.all():
                 learned_map.setdefault(lemma, []).append(sense_id)
 
-        return {
+        response = {
             "id": data.get("sicha_id", sicha_id),
             "meta": data.get("meta", {}),
             "paragraphs": data.get("paragraphs", []),
@@ -121,6 +142,12 @@ class YiddishService:
             "learned_map": learned_map,
             "offsets_version": data.get("offsets_version", "static-demo"),
         }
+        if ru_data:
+            response["ru_paragraphs"] = ru_data.get("paragraphs", [])
+            response["ru_available"] = True
+        else:
+            response["ru_available"] = False
+        return response
 
     async def save_attestation(self, user_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         async with session_scope(self.session_factory) as session:
