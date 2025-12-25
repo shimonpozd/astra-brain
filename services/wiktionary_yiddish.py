@@ -113,6 +113,12 @@ class WiktionaryYiddishService:
                 context_sentence=context_sentence,
                 ui_lang=ui_lang,
             )
+            last_evidence = last_evidence or {}
+            if allow_llm_fallback and not last_evidence.get("pos_entries"):
+                wordcard.setdefault("flags", {})
+                wordcard["flags"]["needs_review"] = True
+                wordcard["flags"]["evidence_missing"] = True
+                wordcard["flags"]["auto_generated"] = True
             wordcard = self._finalize_agent_wordcard(
                 wordcard,
                 word_surface=word_surface,
@@ -831,6 +837,23 @@ class WiktionaryYiddishService:
             "pos": (pos_guess or ""),
             "index": 1,
         }
+
+        last_evidence: Dict[str, Any] = {}
+        try:
+            evidence_bundle = await self.get_evidence_for_tool(
+                word_surface,
+                lemma_guess=lemma_guess,
+                pos_guess=pos_guess,
+                context_sentence=context_sentence,
+                ui_lang=ui_lang,
+            )
+            if isinstance(evidence_bundle, dict):
+                data = evidence_bundle.get("data")
+                if isinstance(data, dict):
+                    last_evidence = data
+                    fmt_args["evidence_json"] = json.dumps(data, ensure_ascii=False)
+        except Exception as exc:
+            logger.warning("Pre-fetch evidence failed", extra={"error": str(exc)})
         try:
             user_msg = user_template.format(**fmt_args)
         except KeyError as exc:
@@ -852,7 +875,6 @@ class WiktionaryYiddishService:
         api_params.update({"tools": tools, "tool_choice": "auto"})
         api_params["response_format"] = {"type": "json_object"}
 
-        last_evidence: Dict[str, Any] = {}
         for _ in range(5):
             try:
                 completion = await llm_client.chat.completions.create(**api_params)
@@ -1002,10 +1024,14 @@ class WiktionaryYiddishService:
         lemma = wordcard.get("lemma") or lemma_fallback or word_surface
         wordcard["lemma"] = lemma
 
+        pos_entries = evidence.get("pos_entries") or []
         if not wordcard.get("pos_default"):
-            pos_entries = evidence.get("pos_entries") or []
             if pos_entries and isinstance(pos_entries[0], dict):
                 wordcard["pos_default"] = pos_entries[0].get("pos")
+        elif pos_entries:
+            valid_pos = [entry.get("pos") for entry in pos_entries if isinstance(entry, dict) and entry.get("pos")]
+            if valid_pos and wordcard.get("pos_default") not in valid_pos:
+                wordcard["pos_default"] = valid_pos[0]
         if wordcard.get("pos_default"):
             short_val = wordcard.get("pos_ru_short") or ""
             full_val = wordcard.get("pos_ru_full") or ""
