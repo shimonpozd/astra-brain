@@ -32,9 +32,19 @@ class YiddishService:
 
     def _load_static_sicha(self, sicha_id: str) -> Dict[str, Any]:
         file_path = self._data_root / f"{sicha_id}.json"
-        if not file_path.exists():
-            file_path = self._data_root / "page_0001.json"
-        return json.loads(file_path.read_text(encoding="utf-8"))
+        if file_path.exists():
+            return json.loads(file_path.read_text(encoding="utf-8"))
+
+        for candidate in sorted(self._data_root.glob("*.json")):
+            try:
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if data.get("sicha_id") == sicha_id:
+                return data
+
+        fallback = self._data_root / "page_0001.json"
+        return json.loads(fallback.read_text(encoding="utf-8"))
 
     def _ensure_tokens(self, data: Dict[str, Any]) -> None:
         """
@@ -63,19 +73,32 @@ class YiddishService:
         data["tokens"] = tokens
 
     async def list_sichos(self, user_id: str) -> Dict[str, Any]:
-        data = self._load_static_sicha("page_0001")
-        return {
-            "items": [
+        items: List[Dict[str, Any]] = []
+        for candidate in sorted(self._data_root.glob("*.json")):
+            try:
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            meta = data.get("meta", {}) or {}
+            sicha_id = data.get("sicha_id") or candidate.stem
+            title = data.get("title")
+            if not title:
+                work = meta.get("work") or "Likkutei Sichos"
+                parsha = meta.get("parsha") or ""
+                section = meta.get("section") or ""
+                volume = meta.get("volume") or ""
+                title = " ".join(str(v) for v in [work, volume, parsha, section] if v)
+            items.append(
                 {
-                    "id": data.get("sicha_id", "ls10_miketz_b"),
-                    "title": "Likkutei Sichos 10 · Miketz · B",
-                    "meta": data.get("meta", {}),
+                    "id": sicha_id,
+                    "title": title,
+                    "meta": meta,
                     "progress_read_pct": 0,
                     "progress_vocab": 0,
                     "last_opened_ts": None,
                 }
-            ]
-        }
+            )
+        return {"items": items}
 
     async def get_sicha(self, sicha_id: str, user_id: str) -> Dict[str, Any]:
         data = self._load_static_sicha(sicha_id)
@@ -188,10 +211,10 @@ class YiddishService:
             )
             senses = []
             for row in result.scalars().all():
-                senses.append({"sense_id": row.sense_id, "gloss_ru": "нет данных"})
+                senses.append({"sense_id": row.sense_id, "gloss_ru": ""})
             return {
                 "lemma": lemma,
-                "pos": "NOUN",
-                "senses": senses or [{"sense_id": f"{lemma}-1", "gloss_ru": "нет данных (демо)"}],
+                "pos": None,
+                "senses": senses,
                 "attestations": [],
             }
