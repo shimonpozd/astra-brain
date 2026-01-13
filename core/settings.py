@@ -132,6 +132,8 @@ class Settings(BaseSettings):
         self.REFRESH_TOKEN_COOKIE_SAMESITE = "lax"
         self.REFRESH_TOKEN_COOKIE_SECURE = True
         self.REFRESH_TOKEN_COOKIE_HTTPONLY = True
+        self.ZMANIM_SERVICE_URL = "http://zmanim-service:8091"
+        self.OPENTOPO_URL_TEMPLATE = "https://api.opentopodata.org/v1/srtm90m?locations={lat},{lon}"
 
     # Default values (will be overridden by TOML config)
     BRAIN_PORT: int = 7030
@@ -175,3 +177,5 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_COOKIE_SAMESITE: str = "lax"
     REFRESH_TOKEN_COOKIE_SECURE: bool = True
     REFRESH_TOKEN_COOKIE_HTTPONLY: bool = True
+    ZMANIM_SERVICE_URL: str = "http://zmanim-service:8091"
+    OPENTOPO_URL_TEMPLATE: str = "https://api.opentopodata.org/v1/srtm90m?locations={lat},{lon}"
