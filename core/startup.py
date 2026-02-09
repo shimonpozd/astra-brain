@@ -27,6 +27,7 @@ from brain_service.services.navigation_service import NavigationService
 from brain_service.services.wiktionary_yiddish import WiktionaryYiddishService
 from brain_service.services.profile_service import ProfileService
 from brain_service.services.talmudic_concept_service import TalmudicConceptService
+from brain_service.services.seder_map_service import SederMapService
 from domain.chat.tools import ToolRegistry
 from .rate_limiting import setup_rate_limiter
 from .database import create_engine, create_session_factory, shutdown_engine
@@ -187,6 +188,61 @@ async def lifespan(app: FastAPI):
         )
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_work_authors_work ON work_authors (work_id)"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_work_authors_author ON work_authors (author_id)"))
+        # Seder domains (fixed set)
+        await conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS seder_domains (
+                    id VARCHAR(64) PRIMARY KEY,
+                    title_he VARCHAR(256),
+                    title_ru VARCHAR(256),
+                    description TEXT,
+                    rules_json JSONB,
+                    pos_x DOUBLE PRECISION,
+                    pos_y DOUBLE PRECISION,
+                    width DOUBLE PRECISION,
+                    height DOUBLE PRECISION,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+        )
+        await conn.execute(
+            text("ALTER TABLE seder_domains ALTER COLUMN created_at SET DEFAULT NOW()")
+        )
+        await conn.execute(
+            text("ALTER TABLE seder_domains ALTER COLUMN updated_at SET DEFAULT NOW()")
+        )
+        await conn.execute(
+            text("UPDATE seder_domains SET created_at = NOW() WHERE created_at IS NULL")
+        )
+        await conn.execute(
+            text("UPDATE seder_domains SET updated_at = NOW() WHERE updated_at IS NULL")
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE seder_map_nodes ADD COLUMN IF NOT EXISTS domain_id VARCHAR(64)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_seder_map_nodes_domain_id ON seder_map_nodes (domain_id)"
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                INSERT INTO seder_domains (id, title_he, title_ru, description)
+                VALUES
+                  ('BEFORE_TZIMTZUM', 'לפני הצמצום', 'Перед цимцумом', 'До-онтологические условия'),
+                  ('TZIMTZUM_AND_KAV', 'הצמצום והקו', 'Цимцум и кав', 'Переходный режим'),
+                  ('BIYA_GENERAL', 'בי״ע דכללות', 'БИ״А в общих чертах', 'Архетипическое нисхождение'),
+                  ('ABIYA_PARTICULAR', 'אבי״ע דפרטות', 'АБИ״А в частности', 'Конкретные миры')
+                ON CONFLICT (id) DO NOTHING
+                """
+            )
+        )
         # Profiles curation columns (idempotent)
         await conn.execute(
             text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS manual_summary_html TEXT")
@@ -473,6 +529,11 @@ async def lifespan(app: FastAPI):
 
     # Talmudic concepts (highlighting + content)
     app.state.talmudic_concept_service = TalmudicConceptService(
+        session_factory=app.state.db_session_factory,
+    )
+
+    # Seder map service
+    app.state.seder_map_service = SederMapService(
         session_factory=app.state.db_session_factory,
     )
 

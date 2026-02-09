@@ -10,6 +10,8 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
+    Float,
     String,
     Text,
     UniqueConstraint,
@@ -268,3 +270,221 @@ class WorkAuthor(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     work_id: Mapped[str] = mapped_column(String(512), ForeignKey("works.index_title", ondelete="CASCADE"))
     author_id: Mapped[str] = mapped_column(String(256), ForeignKey("authors.slug", ondelete="CASCADE"))
+
+
+# --- Seder Hishtalshelus Map models ---
+
+class SederDefinition(Base, TimestampMixin):
+    __tablename__ = "seder_definitions"
+    __table_args__ = (
+        Index("ix_seder_definitions_term_he", "term_he"),
+        Index("ix_seder_definitions_term_ru", "term_ru"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    term_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    term_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    translit: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+
+class SederDomain(Base, TimestampMixin):
+    __tablename__ = "seder_domains"
+    __table_args__ = (
+        Index("ix_seder_domains_title_he", "title_he"),
+        Index("ix_seder_domains_title_ru", "title_ru"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    title_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rules_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    pos_x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pos_y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    width: Mapped[float | None] = mapped_column(Float, nullable=True)
+    height: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class SederArticle(Base, TimestampMixin):
+    __tablename__ = "seder_articles"
+    __table_args__ = (
+        Index("ix_seder_articles_title_he", "title_he"),
+        Index("ix_seder_articles_title_ru", "title_ru"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title_he: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    title_ru: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False, default="internal")
+    status_he: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    status_ru: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+
+class SederMapNode(Base, TimestampMixin):
+    __tablename__ = "seder_map_nodes"
+    __table_args__ = (
+        Index("ix_seder_map_nodes_definition_id", "definition_id"),
+        Index("ix_seder_map_nodes_article_id", "article_id"),
+        Index("ix_seder_map_nodes_spine_parent_id", "spine_parent_id"),
+        Index("ix_seder_map_nodes_domain_id", "domain_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    definition_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_definitions.id"), nullable=True)
+    domain_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("seder_domains.id"), nullable=True)
+    title_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    title_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    node_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    phase: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    context_tag: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    article_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_articles.id"), nullable=True)
+    spine_parent_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_map_nodes.id"), nullable=True)
+    pos_x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pos_y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    width: Mapped[float | None] = mapped_column(Float, nullable=True)
+    height: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class SederMapEdge(Base, TimestampMixin):
+    __tablename__ = "seder_map_edges"
+    __table_args__ = (
+        Index("ix_seder_map_edges_source_id", "source_id"),
+        Index("ix_seder_map_edges_target_id", "target_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_map_nodes.id"), nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_map_nodes.id"), nullable=False)
+    connection_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    label_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    label_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    is_canonical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class SederMapGroup(Base, TimestampMixin):
+    __tablename__ = "seder_map_groups"
+    __table_args__ = (
+        Index("ix_seder_map_groups_order", "order_index"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    title_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    phase: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    order_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pos_x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pos_y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    width: Mapped[float | None] = mapped_column(Float, nullable=True)
+    height: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class SederMapNote(Base, TimestampMixin):
+    __tablename__ = "seder_map_notes"
+    __table_args__ = (
+        Index("ix_seder_map_notes_kind", "kind"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, default="note")
+    title_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    title_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    text_he: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text_ru: Mapped[str | None] = mapped_column(Text, nullable=True)
+    color: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    domain_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("seder_domains.id"), nullable=True)
+    attached_node_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_map_nodes.id"), nullable=True)
+    attached_edge_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_map_edges.id"), nullable=True)
+    pos_x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pos_y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    width: Mapped[float | None] = mapped_column(Float, nullable=True)
+    height: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class SederSegment(Base, TimestampMixin):
+    __tablename__ = "seder_segments"
+    __table_args__ = (
+        Index("ix_seder_segments_article_id", "article_id"),
+        Index("ix_seder_segments_order", "order_index"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    article_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_articles.id"), nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    text_he: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text_ru: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status_he: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    status_ru: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class SederSegmentVersion(Base, TimestampMixin):
+    __tablename__ = "seder_segment_versions"
+    __table_args__ = (
+        Index("ix_seder_segment_versions_segment_id", "segment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    segment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_segments.id"), nullable=False)
+    lang: Mapped[str] = mapped_column(String(8), nullable=False)
+    author_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class SederGlossaryTerm(Base, TimestampMixin):
+    __tablename__ = "seder_glossary_terms"
+    __table_args__ = (
+        Index("ix_seder_glossary_terms_term_he", "term_he"),
+        Index("ix_seder_glossary_terms_term_ru", "term_ru"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    term_he: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    translit: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    term_ru: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+
+class SederNodeGlossaryLink(Base, TimestampMixin):
+    __tablename__ = "seder_node_glossary_links"
+    __table_args__ = (
+        UniqueConstraint("node_id", "term_id", name="uq_seder_node_term"),
+        Index("ix_seder_node_glossary_node", "node_id"),
+        Index("ix_seder_node_glossary_term", "term_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    node_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_map_nodes.id"), nullable=False)
+    term_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_glossary_terms.id"), nullable=False)
+
+
+class SederSegmentLink(Base, TimestampMixin):
+    __tablename__ = "seder_segment_links"
+    __table_args__ = (
+        Index("ix_seder_segment_links_he", "hebrew_segment_id"),
+        Index("ix_seder_segment_links_ru", "russian_segment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    hebrew_segment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_segments.id"), nullable=False)
+    russian_segment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("seder_segments.id"), nullable=False)
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class SederMapLayout(Base, TimestampMixin):
+    __tablename__ = "seder_map_layouts"
+    __table_args__ = (
+        Index("ix_seder_map_layouts_owner", "owner_user_id"),
+        Index("ix_seder_map_layouts_canonical", "is_canonical"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    is_canonical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    layout_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

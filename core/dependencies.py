@@ -10,6 +10,7 @@ from brain_service.services.achievement_service import AchievementService
 from brain_service.services.talmudic_concept_service import TalmudicConceptService
 from brain_service.services.yiddish_service import YiddishService
 from brain_service.services.wiktionary_yiddish import WiktionaryYiddishService
+from brain_service.services.seder_map_service import SederMapService
 
 def get_redis_client(request: Request) -> redis.Redis:
     """Dependency to get the Redis client from the application state."""
@@ -128,6 +129,13 @@ def get_wiktionary_yiddish_service(request: Request) -> WiktionaryYiddishService
         raise HTTPException(status_code=503, detail="Yiddish WordCard service unavailable")
     if getattr(service, "tool_registry", None) is None:
         service.tool_registry = getattr(request.app.state, "tool_registry", None)
+    return service
+
+
+def get_seder_map_service(request: Request) -> SederMapService:
+    service = getattr(request.app.state, "seder_map_service", None)
+    if service is None:
+        raise HTTPException(status_code=503, detail="Seder map service unavailable")
     return service
 
 

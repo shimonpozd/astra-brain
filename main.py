@@ -17,7 +17,7 @@ from core.middleware import logging_middleware, setup_cors_middleware
 from core.exceptions import setup_exception_handlers
 from core.settings import Settings
 
-from api import admin, chat, study, actions, tts, audio, auth, users, xp, achievements, profile, timeline, highlight_data, llm_router, talmudic_concepts_admin, yiddish_admin
+from api import admin, chat, study, actions, tts, audio, auth, users, xp, achievements, profile, timeline, highlight_data, llm_router, talmudic_concepts_admin, yiddish_admin, seder_map
 from api import yiddish, zmanim, geo
 
 # Initialize the FastAPI app with the lifespan manager
@@ -59,6 +59,7 @@ app.include_router(achievements.router, prefix="/api", tags=["achievements"])
 app.include_router(yiddish.router, prefix="/api", tags=["yiddish"])
 app.include_router(zmanim.router, prefix="/api", tags=["zmanim"])
 app.include_router(geo.router, prefix="/api", tags=["geo"])
+app.include_router(seder_map.router, prefix="/api", tags=["seder_map"])
 
 @app.get("/health")
 async def health():
