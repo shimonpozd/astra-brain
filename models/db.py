@@ -317,6 +317,8 @@ class SederArticle(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title_he: Mapped[str | None] = mapped_column(String(512), nullable=True)
     title_ru: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    text_he: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text_ru: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_type: Mapped[str] = mapped_column(String(32), nullable=False, default="internal")
     status_he: Mapped[str | None] = mapped_column(String(32), nullable=True)
     status_ru: Mapped[str | None] = mapped_column(String(32), nullable=True)

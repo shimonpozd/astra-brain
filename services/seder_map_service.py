@@ -210,6 +210,8 @@ class SederMapService:
                 article = SederArticle(
                     title_he=payload.get("title_he"),
                     title_ru=payload.get("title_ru"),
+                    text_he=payload.get("text_he"),
+                    text_ru=payload.get("text_ru"),
                     source_type=payload.get("source_type", "internal"),
                     status_he=payload.get("status_he"),
                     status_ru=payload.get("status_ru"),
@@ -225,6 +227,27 @@ class SederMapService:
             if not article:
                 return None
             return self._article_to_dict(article)
+
+    async def update_article(self, article_id: uuid.UUID, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        async with self._session_factory() as session:
+            async with session.begin():
+                article = await session.get(SederArticle, article_id)
+                if not article:
+                    return None
+                for field in [
+                    "title_he",
+                    "title_ru",
+                    "text_he",
+                    "text_ru",
+                    "source_type",
+                    "status_he",
+                    "status_ru",
+                ]:
+                    if field in payload:
+                        setattr(article, field, payload[field])
+                await session.flush()
+                await session.refresh(article)
+                return self._article_to_dict(article)
 
     async def list_segments(self, article_id: uuid.UUID) -> List[Dict[str, Any]]:
         async with self._session_factory() as session:
@@ -519,6 +542,8 @@ class SederMapService:
             "id": str(article.id),
             "title_he": article.title_he,
             "title_ru": article.title_ru,
+            "text_he": article.text_he,
+            "text_ru": article.text_ru,
             "source_type": article.source_type,
             "status_he": article.status_he,
             "status_ru": article.status_ru,

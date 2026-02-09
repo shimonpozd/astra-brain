@@ -231,6 +231,12 @@ async def lifespan(app: FastAPI):
             )
         )
         await conn.execute(
+            text("ALTER TABLE seder_articles ADD COLUMN IF NOT EXISTS text_he TEXT")
+        )
+        await conn.execute(
+            text("ALTER TABLE seder_articles ADD COLUMN IF NOT EXISTS text_ru TEXT")
+        )
+        await conn.execute(
             text(
                 """
                 INSERT INTO seder_domains (id, title_he, title_ru, description)

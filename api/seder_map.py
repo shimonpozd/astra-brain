@@ -59,7 +59,19 @@ class EdgeCreate(BaseModel):
 class ArticleCreate(BaseModel):
     title_he: Optional[str] = None
     title_ru: Optional[str] = None
+    text_he: Optional[str] = None
+    text_ru: Optional[str] = None
     source_type: Optional[str] = "internal"
+    status_he: Optional[str] = None
+    status_ru: Optional[str] = None
+
+
+class ArticleUpdate(BaseModel):
+    title_he: Optional[str] = None
+    title_ru: Optional[str] = None
+    text_he: Optional[str] = None
+    text_ru: Optional[str] = None
+    source_type: Optional[str] = None
     status_he: Optional[str] = None
     status_ru: Optional[str] = None
 
@@ -281,6 +293,19 @@ async def get_article(
     service: SederMapService = Depends(get_seder_map_service),
 ):
     article = await service.get_article(article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
+
+
+@router.patch("/seder/article/{article_id}")
+async def update_article(
+    article_id: uuid.UUID,
+    payload: ArticleUpdate,
+    _admin: User = Depends(require_admin_user),
+    service: SederMapService = Depends(get_seder_map_service),
+):
+    article = await service.update_article(article_id, payload.model_dump(exclude_unset=True))
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     return article
