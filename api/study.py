@@ -107,6 +107,23 @@ async def study_bookshelf_handler(
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Session belongs to another user")
 
+@router.get("/talmud/comments")
+async def study_talmud_comments_handler(
+    ref: str,
+    study_service: StudyService = Depends(get_study_service)
+):
+    """
+    Get all Rashi and Tosafot comments for a given Talmud daf.
+    """
+    if not ref:
+        raise HTTPException(status_code=400, detail="Reference (ref) is required")
+        
+    result = await study_service.get_talmud_comments(ref)
+    if result.get("ok"):
+        return result
+    else:
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to fetch Talmud comments"))
+
 @router.post("/resolve")
 async def study_resolve_handler(
     request: StudyResolveRequest, 

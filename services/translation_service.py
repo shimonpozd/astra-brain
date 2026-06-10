@@ -121,9 +121,21 @@ class TranslationService:
                     yield {"type": "error", "data": {"message": f"Unexpected data format for reference: {tref}"}}
                     return
                     
-                hebrew_text = self._normalize_text(data.get("he_text", ""))
-                english_text = self._normalize_text(data.get("en_text", ""))
+                raw_he = data.get("he_text") or data.get("he") or ""
+                raw_en = data.get("en_text") or data.get("text") or ""
+                
+                # If they are lists, join them (Sefaria sometimes returns lists for single refs)
+                if isinstance(raw_he, list):
+                    raw_he = " ".join([str(x) for x in raw_he if x])
+                if isinstance(raw_en, list):
+                    raw_en = " ".join([str(x) for x in raw_en if x])
+                    
+                hebrew_text = self._normalize_text(str(raw_he))
+                english_text = self._normalize_text(str(raw_en))
             
+            if not english_text:
+                english_text = "(Not provided)"
+                
             if not hebrew_text:
                 yield {"type": "error", "data": {"message": f"No Hebrew text found for reference: {tref}"}}
                 return

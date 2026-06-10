@@ -1409,3 +1409,85 @@ You can see what texts are currently open in the study interface. You have acces
         except Exception as e:
             logger.error(f"Error getting panel text for {panel_id}: {e}")
             return None
+
+    async def get_talmud_comments(self, ref: str) -> Dict[str, Any]:
+        """
+        Fetches all Rashi and Tosafot comments for a given Talmud daf/page.
+        Groups them by Gemara segment they refer to.
+        """
+        daf_ref = self._get_daf_ref(ref)
+        logger.info(f"Fetching Talmud comments for daf: {daf_ref} (original: {ref})")
+        
+        result = await self.sefaria_service.get_links_with_text(daf_ref)
+        if not result.get("ok"):
+            return result
+            
+        links = result.get("data", [])
+        comments = []
+        
+        for link in links:
+            source_ref = link.get("sourceRef", "")
+            anchor_ref = link.get("anchorRef", "")
+            
+            # We are interested in Rashi and Tosafot
+            category = link.get("category", "")
+            if category != "Commentary":
+                continue
+                
+            index_title = link.get("index_title", "")
+            commentator = ""
+            if "Rashi on " in index_title:
+                commentator = "Rashi"
+            elif "Tosafot on " in index_title:
+                commentator = "Tosafot"
+            else:
+                continue
+                
+            he_text = link.get("he", "")
+            en_text = link.get("text", "") # English text in links API is often under "text"
+            
+            if not he_text:
+                continue
+                
+            # Extract dibbur hamatkhil
+            dh = self._extract_dibbur_hamatkhil(he_text)
+            
+            comments.append({
+                "ref": source_ref,
+                "anchorRef": anchor_ref,
+                "commentator": commentator,
+                "he": he_text,
+                "en": en_text,
+                "dh": dh
+            })
+            
+        return {"ok": True, "daf": daf_ref, "comments": comments}
+
+    def _get_daf_ref(self, ref: str) -> str:
+        """Normalizes a Talmud ref to the daf level (e.g. Shabbat 21a:5 -> Shabbat 21a)"""
+        m = re.match(r"^(.+) (\d+[ab])", ref)
+        if m:
+            return f"{m.group(1)} {m.group(2)}"
+        return ref
+
+    def _extract_dibbur_hamatkhil(self, he_text: str) -> Optional[str]:
+        """
+        Extracts the opening phrase (Dibbur Hamatkhil) from a comment.
+        Looks for <b> tags or separators like dot or dash.
+        """
+        if not he_text:
+            return None
+            
+        # 1. Look for <b>...</b>
+        m = re.search(r"<b>(.+?)</b>", he_text)
+        if m:
+            return m.group(1).strip()
+            
+        # 2. Look for dot or dash in first 100 chars
+        prefix = he_text[:100]
+        # Look for - or . or – or —
+        split_match = re.search(r"[\-\.\–\—]", prefix)
+        if split_match:
+            return prefix[:split_match.start()].strip()
+            
+        return None

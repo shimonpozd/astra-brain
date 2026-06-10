@@ -257,13 +257,28 @@ async def _collect_talmud_amud_segments(
         clean_en = _clean_html_text(en_text)
         clean_he = _clean_html_text(he_text)
 
+        # SMARTER SWAP DETECTION: Use character sets to identify language
+        # For Talmud, Sefaria often swaps fields or provides bilingual text in one
+        is_en_actually_he = bool(re.search(r'[\u0590-\u05FF]', clean_en))
+        is_he_actually_en = not bool(re.search(r'[\u0590-\u05FF]', clean_he)) and bool(clean_he.strip())
+
+        # If 'en' field contains Hebrew and 'he' is empty or NOT Hebrew, swap
+        if is_en_actually_he and (not clean_he.strip() or is_he_actually_en):
+            clean_en, clean_he = clean_he, clean_en
+        
+        # If 'en' is still empty but 'he' has English (Sefaria sometimes does this), move it
+        elif not clean_en.strip() and is_he_actually_en:
+            clean_en, clean_he = clean_he, ""
+
         segment_ref = f"{book} {daf}{side}:{idx + 1}"
         segments.append(
             {
                 "ref": segment_ref,
-                "text": clean_he or clean_en,
-                "heText": clean_he or clean_en,
+                "text": clean_en or clean_he, 
+                "heText": clean_he,
                 "enText": clean_en,
+                "he_text": clean_he, # Consistent with TranslationService expectations
+                "en_text": clean_en, # Consistent with TranslationService expectations
                 "metadata": {
                     "title": base_title,
                     "indexTitle": index_title,
@@ -646,8 +661,8 @@ async def get_text_with_window(ref: str, sefaria_service: SefariaService, index_
                                 if he_text:  # Only add if there's Hebrew text
                                     formatted_segments.append({
                                         "ref": verse_ref,
-                                        "text": he_text,  # Only Hebrew text
-                                        "heText": he_text,
+                                        "text": en_text,  # Use English translation
+                                        "heText": he_text, # Use Hebrew source
                                         "position": 0,  # Will be normalized later
                                         "metadata": {
                                             "title": verse_data.get("title"),
@@ -720,10 +735,16 @@ async def get_text_with_window(ref: str, sefaria_service: SefariaService, index_
     formatted_segments = []
     total_segments = len(all_segments_data)
     for i, seg_data in enumerate(all_segments_data):
+        raw_he = getattr(seg_data, "he_text", "") or seg_data.get("he_text") or seg_data.get("he") or ""
+        raw_en = getattr(seg_data, "en_text", "") or seg_data.get("en_text") or seg_data.get("text") or ""
+        
         formatted_segments.append({
             "ref": seg_data.get("ref"),
-            "text": getattr(seg_data, "he_text", "") or seg_data.get("he_text") or "",      # FocusReader показывает только иврит
-            "heText": getattr(seg_data, "he_text", "") or seg_data.get("he_text") or "",    # Map he_text to heText
+            "text": raw_en or raw_he,
+            "heText": raw_he,
+            "enText": raw_en,
+            "he_text": raw_he,
+            "en_text": raw_en,
             "position": (i / (total_segments - 1)) if total_segments > 1 else 0.5,
             "metadata": {
                 "title": seg_data.get("title"),

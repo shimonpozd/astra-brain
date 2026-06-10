@@ -37,13 +37,20 @@ class TextSegmentMetadata(BaseModel):
     line: Optional[int] = None
     title: Optional[str] = None
     indexTitle: Optional[str] = None
+    enText: Optional[str] = None
 
 class TextSegment(BaseModel):
     ref: str
     text: str
     heText: str
+    enText: Optional[str] = None
+    en_text: Optional[str] = None
+    he_text: Optional[str] = None
     position: float
     metadata: TextSegmentMetadata
+
+    class Config:
+        extra = "allow"
 
 class TextDisplay(BaseModel):
     segments: List[TextSegment]

@@ -65,12 +65,12 @@ class SefariaService:
         return payload
 
     async def get_text(self, tref: str, lang: str | None = None) -> Dict[str, Any]:
-        # Request both Hebrew (source) and English (translation) versions
-        params = {"version": ["source", "translation"], "context": 0, "pad": 0, "commentary": 0}
+        # Legacy parameters for the reliable bilingual endpoint
+        legacy_params = {"commentary": 0, "context": 0, "pad": 0}
         if lang:
-            params["lang"] = lang
+            legacy_params["lang"] = lang
 
-        # Coerce accidental Talmud-like Bible refs, e.g. "Genesis 19b.18" -> "Genesis 19:18"
+        # Coerce accidental Talmud-like Bible refs
         try:
             lowered = (tref or "").lower()
             bible_books = ['genesis', 'exodus', 'leviticus', 'numbers', 'deuteronomy', 'joshua', 'judges', 'samuel', 'kings', 'isaiah', 'jeremiah', 'ezekiel', 'psalms', 'proverbs', 'job', 'song', 'ruth', 'lamentations', 'ecclesiastes', 'esther', 'daniel', 'ezra', 'nehemiah', 'chronicles']
@@ -78,112 +78,89 @@ class SefariaService:
                 m = re.match(r"([\w\s'.]+) (\d+)[ab][\.:](\d+)$", tref, re.IGNORECASE)
                 if m:
                     coerced = f"{m.group(1).strip()} {int(m.group(2))}:{int(m.group(3))}"
-                    logger.debug({"coerced_bible_ref": {"from": tref, "to": coerced}})
                     tref = coerced
         except Exception:
             pass
 
-        # Normalize the reference but don't change the format
         final_ref = await normalize_tref(tref)
-        cache_key = self._cache_key(final_ref, params)
-
+        
+        # Cache check
+        cache_key = self._cache_key(final_ref, legacy_params)
         if self.redis_client:
             try:
                 cached_result = await self.redis_client.get(cache_key)
                 if cached_result:
-                    logger.info(f"Sefaria cache HIT for key: {cache_key}")
                     return json.loads(cached_result)
             except Exception as e:
                 logger.error(f"Redis cache read failed for key {cache_key}: {e}")
 
-        logger.info(f"SEFARIA_SERVICE: Attempting fetch for ref: '{final_ref}' with params: {params}")
+        # PREFER LEGACY API: It is much more reliable for getting both Hebrew and English at once.
+        logger.info(f"SEFARIA_SERVICE: Fetching '{final_ref}' using legacy API")
         
-        api_call = lambda: get_from_sefaria(
-            self.http_client, f"v3/texts/{quote(final_ref)}", 
-            api_url=self.api_url, api_key=self.api_key, params=params
-        )
-        used_v3_endpoint = True
-        raw_result = await with_retries(api_call)
+        try:
+            api_call = lambda: get_from_sefaria(
+                self.http_client,
+                f"texts/{quote(final_ref)}",
+                api_url=self.api_url,
+                api_key=self.api_key,
+                params=legacy_params,
+            )
+            raw_result = await with_retries(api_call)
+        except Exception as e:
+            logger.error(f"Legacy API fetch failed for {final_ref}: {e}")
+            raw_result = {"error": str(e)}
 
-        if isinstance(raw_result, dict) and raw_result.get("error"):
-            error_text = str(raw_result.get("error", "")).lower()
-            detail_text = str(raw_result.get("details", "")).lower()
-            if "404" in error_text or "not found" in detail_text:
-                logger.info(
-                    "Sefaria v3 endpoint unavailable, falling back to legacy /texts/ for %s",
-                    final_ref,
-                )
-                used_v3_endpoint = False
-                legacy_call = lambda: get_from_sefaria(
-                    self.http_client,
-                    f"texts/{quote(final_ref)}",
-                    api_url=self.api_url,
-                    api_key=self.api_key,
-                    params={"commentary": 0, "context": 0, "pad": 0},
-                )
-                raw_result = await with_retries(legacy_call)
+        # Fallback to V3 if legacy failed or returned error
+        if not raw_result or (isinstance(raw_result, dict) and raw_result.get("error")):
+            logger.info(f"SEFARIA_SERVICE: Legacy API failed for {final_ref}, trying V3")
+            v3_params = {"context": 0, "pad": 0}
+            v3_call = lambda: get_from_sefaria(
+                self.http_client, f"v3/texts/{quote(final_ref)}", 
+                api_url=self.api_url, api_key=self.api_key, params=v3_params
+            )
+            raw_result = await with_retries(v3_call)
 
-        # 3. Process the final result
+        # Process the final result
         if isinstance(raw_result, list) and len(raw_result) > 0:
-            # Handle case where Sefaria returns a list of comments/texts
-            logger.info(f"SEFARIA_SERVICE: Fetch SUCCEEDED for ref: '{final_ref}' (list of {len(raw_result)} items)")
-            # For now, return the list as-is and let the calling code handle it
             result = {"ok": True, "data": raw_result}
         elif ok_and_has_text(raw_result):
-            logger.info(f"SEFARIA_SERVICE: Fetch SUCCEEDED for ref: '{final_ref}'")
-            compacted_text = CompactText(raw_result).to_dict_min()
-            en_text = compacted_text.get('en_text', '')
-            he_text = compacted_text.get('he_text', '')
-            logger.info(f"SEFARIA_SERVICE: CompactText result - en_text: {bool(en_text)} (len={len(en_text) if en_text else 0}), he_text: {bool(he_text)} (len={len(he_text) if he_text else 0})")
-            if he_text:
-                logger.info(f"SEFARIA_SERVICE: HE_TEXT PREVIEW: [Hebrew text - {len(he_text)} chars]")
-            # Attempt to fetch segmented verses using v2 texts endpoint
-            segment_payload = None
-            if used_v3_endpoint:
-                try:
-                    segment_payload = await get_from_sefaria(
-                        self.http_client,
-                        f"texts/{quote(final_ref)}",
-                        api_url=self.api_url,
-                        api_key=self.api_key,
-                        params={"commentary": 0, "context": 0, "pad": 0},
-                    )
-                except Exception as seg_exc:  # pragma: no cover - best effort
-                    logger.warning(
-                        "SEFARIA_SERVICE: Segment fetch failed",
-                        extra={"ref": final_ref, "error": str(seg_exc)},
-                    )
-            elif isinstance(raw_result, dict):
-                segment_payload = raw_result
-                logger.info(
-                    "SEFARIA_SERVICE: Using legacy payload as segment source for '%s'",
-                    final_ref,
-                )
-
-            raw_text = None
-            raw_he = None
-            if isinstance(segment_payload, dict):
-                raw_text = segment_payload.get("text")
-                raw_he = segment_payload.get("he")
-            else:
-                raw_text = raw_result.get("text")
-                raw_he = raw_result.get("he")
-
+            # Try to extract the data manually first to avoid CompactText stripping complex structures like Talmud spanning arrays
+            raw_text = raw_result.get("text", [])
+            raw_he = raw_result.get("he", [])
+            
+            # Use CompactText as a baseline but manually override the text fields
+            try:
+                compacted_text = CompactText(raw_result).to_dict_min()
+            except Exception as e:
+                logger.warning(f"SEFARIA_SERVICE: CompactText parsing failed for {final_ref}: {e}")
+                compacted_text = dict(raw_result)
+            
+            # For backward compatibility and specialized Talmud processing
             if isinstance(raw_text, list):
                 compacted_text["text_segments"] = raw_text
+                compacted_text["text"] = raw_text
+                compacted_text["en_text"] = raw_text # Ensure en_text is populated
+            elif isinstance(raw_text, str):
+                compacted_text["text"] = raw_text
+                compacted_text["en_text"] = raw_text
+
             if isinstance(raw_he, list):
                 compacted_text["he_segments"] = raw_he
+                compacted_text["he"] = raw_he
+                compacted_text["he_text"] = raw_he # Ensure he_text is populated
+            elif isinstance(raw_he, str):
+                compacted_text["he"] = raw_he
+                compacted_text["he_text"] = raw_he
+                
             result = {"ok": True, "data": compacted_text}
         else:
-            logger.warning(f"SEFARIA_SERVICE: Fetch FAILED for {final_ref} after all fallbacks.")
+            logger.warning(f"SEFARIA_SERVICE: Fetch FAILED for {final_ref} after fallback.")
             result = {"ok": False, "error": f"Text not found for '{final_ref}'"}
 
-        # 4. Store in cache if successful
+        # Store in cache
         if result["ok"] and self.redis_client:
-            # Use the original cache key (without 'he') to store the successful result
             try:
                 await self.redis_client.set(cache_key, json.dumps(result), ex=self.cache_ttl)
-                logger.info(f"Sefaria cache WRITE for key: {cache_key}")
             except Exception as e:
                 logger.error(f"Redis cache write failed for key {cache_key}: {e}")
 
@@ -222,3 +199,42 @@ class SefariaService:
 
         compacted = compact_and_deduplicate_links(links, categories=cats, limit=limit)
         return {"ok": True, "data": compacted}
+
+    async def get_links_with_text(self, ref: str) -> Dict[str, Any]:
+        """
+        Fetch links for a reference along with their text content.
+        Uses /api/links/{ref}?with_text=1
+        """
+        norm_ref = await normalize_tref(ref)
+        cache_key = f"sefaria_links_text_cache:v1:{norm_ref}"
+        
+        if self.redis_client:
+            try:
+                cached = await self.redis_client.get(cache_key)
+                if cached:
+                    return json.loads(cached)
+            except Exception as e:
+                logger.warning(f"Sefaria links+text cache read failed for {norm_ref}: {e}")
+
+        try:
+            logger.info(f"Fetching links with text for '{norm_ref}'")
+            api_call = lambda: get_from_sefaria(
+                self.http_client, 
+                f"links/{quote(norm_ref)}", 
+                api_url=self.api_url, 
+                api_key=self.api_key, 
+                params={"with_text": 1, "with_sheet_links": 0}
+            )
+            links = await with_retries(api_call)
+            payload = {"ok": True, "data": links if isinstance(links, list) else []}
+        except Exception as e:
+            logger.error(f"/api/links?with_text=1 call failed for {norm_ref}: {e}", exc_info=True)
+            payload = {"ok": False, "error": str(e)}
+
+        if payload["ok"] and self.redis_client:
+            try:
+                await self.redis_client.set(cache_key, json.dumps(payload), ex=self.cache_ttl)
+            except Exception as e:
+                logger.warning(f"Sefaria links+text cache write failed for {norm_ref}: {e}")
+
+        return payload
