@@ -4,7 +4,7 @@ from typing import Iterable
 NIQQUD_RANGE = r"\u0591-\u05C7"
 NIQQUD_RE = re.compile(f"[{NIQQUD_RANGE}]")
 _WHITESPACE_RE = re.compile(r"\s+")
-PREFIX_CHARS = "ובכלדהשה"
+PREFIX_CHARS = "ובכלמדהשה"
 SEP_PATTERN = r"[\s\u00A0,.;:׳\"״\-–—·<>/]*"
 HEBREW_RANGE = r"\u0590-\u05FF"
 
@@ -60,8 +60,7 @@ def generate_vowel_insensitive_regex(name_he: str) -> str:
 
     core = between.join(letters)
     start_boundary = r"(?<![\u0590-\u05FF])"  # не в середине другого еврейского слова
-    # не позволяем продолжению ивритского слова сразу после пробела/никуда
-    end_boundary = r"(?!(?:\s*[\u0590-\u05FF]))"
+    end_boundary = r"(?![\u0590-\u05FF])"     # не продолжается буквами того же еврейского слова
     pattern = start_boundary + prefix + core + end_boundary
     return pattern
 

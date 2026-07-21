@@ -209,8 +209,16 @@ async def add_sage_mapping(
         aliases = []
 
     raw_clean = strip_niqqud(payload.raw_text.strip())
-    if raw_clean and raw_clean not in aliases:
-        aliases.append(raw_clean)
+    import re
+    unprefixed = re.sub(r'^[ובכלמדהשה]+(?=(?:רבי|רב|רן|מר|שמעון|אלעזר|יוחנן|יהודה|יוסי|חנינא|אשי|פפא|אבא|רבא|אביי|ריש)\b)', '', raw_clean)
+    
+    added_any = False
+    for candidate in [raw_clean, unprefixed]:
+        if candidate and candidate not in aliases:
+            aliases.append(candidate)
+            added_any = True
+
+    if added_any:
         display["aliases"] = aliases
         author_facts["display"] = display
         facts["author"] = author_facts
