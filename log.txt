@@ -1,0 +1,1634 @@
+Yiddish library unavailable; falling back to basic normalization
+D:\AI\astra\.venv\Lib\site-packages\pydantic\_internal\_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+  warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+D:\AI\astra\.venv\Lib\site-packages\pythonjsonlogger\jsonlogger.py:11: DeprecationWarning: pythonjsonlogger.jsonlogger has been moved to pythonjsonlogger.json
+  warnings.warn(
+INFO:     Started server process [28072]
+INFO:     Waiting for application startup.
+2026-07-13 14:17:40,516 - root - INFO - Logging configured successfully.
+2026-07-13 14:17:40,903 - brain_service.services.sefaria_index_service - INFO - SefariaIndexService: Loading Sefaria table of contents...
+2026-07-13 14:17:42,540 - brain_service.services.sefaria_index_service - INFO - SefariaIndexService: TOC loaded. Building aliases...
+2026-07-13 14:17:42,553 - brain_service.services.sefaria_index_service - INFO - SefariaIndexService: Built 13196 aliases.
+2026-07-13 14:17:42,554 - brain_service.services.config_service - INFO - Configuration service started listening
+2026-07-13 14:17:42,558 - brain_service.services.config_service - INFO - Configuration loaded from central system
+2026-07-13 14:17:42,559 - brain_service.services.sefaria_mcp_service - INFO - Initialized SefariaMCPService
+2026-07-13 14:17:42,559 - core.startup - INFO - Sefaria MCP service ready
+2026-07-13 14:17:42,568 - core.rate_limiting - INFO - Rate limiter configured: 10 requests per 60 seconds
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'sefaria_get_text'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'sefaria_get_related_links'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'sefaria_get_lexicon'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'wiktionary_yiddish_lookup'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'wiktionary_yiddish_evidence_lookup'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'sefaria_text_search'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'sefaria_semantic_search'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'sefaria_topic_details'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'wikipedia_search'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'chabadpedia_search'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'navigate_to_ref'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'load_commentary_to_workbench'
+2026-07-13 14:17:42,570 - domain.chat.tools - INFO - Registering tool: 'clear_workbench_panel'
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:7030 (Press CTRL+C to quit)
+Successfully connected to Redis.
+Startup complete. Yielding to application.
+INFO:     127.0.0.1:58792 - "OPTIONS /api/xp/profile HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62549 - "POST /api/auth/refresh HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:54060 - "POST /api/auth/refresh HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58792 - "GET /api/xp/profile HTTP/1.1" 200 OK
+2026-07-13 14:17:46,079 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+D:\AI\astra\.venv\Lib\site-packages\passlib\context.py:2251: DeprecationWarning: CryptContext.hash(): 'scheme' keyword is deprecated as of Passlib 1.7, and will be removed in Passlib 2.0
+  warn("CryptContext.hash(): 'scheme' keyword is deprecated as of "
+INFO:     127.0.0.1:54060 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58792 - "GET /api/xp/profile HTTP/1.1" 200 OK
+2026-07-13 14:17:46,928 - api.chat - ERROR - Failed to get daily calendar: 'No time zone found with key America/New_York'
+INFO:     127.0.0.1:54558 - "GET /api/daily/calendar HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51177 - "OPTIONS /api/admin/personalities/public?t=1783941466920 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58787 - "OPTIONS /api/admin/personalities/public?t=1783941466922 HTTP/1.1" 200 OK
+2026-07-13 14:17:46,935 - api.chat - ERROR - Failed to get daily calendar: 'No time zone found with key America/New_York'
+INFO:     127.0.0.1:61113 - "GET /api/daily/calendar HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58787 - "GET /api/admin/personalities/public?t=1783941466920 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51177 - "GET /api/admin/personalities/public?t=1783941466922 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58792 - "GET /api/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51177 - "GET /api/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53282 - "OPTIONS /api/chats/7bdbd467-e035-4e02-a4cf-fddbd0b6f9a3 HTTP/1.1" 200 OK
+2026-07-13 14:18:03,887 - brain_service.services.chat_service - INFO - Chat history requested for missing session
+INFO:     127.0.0.1:53282 - "GET /api/chats/7bdbd467-e035-4e02-a4cf-fddbd0b6f9a3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61806 - "OPTIONS /api/chats/b724c650-ad0a-4e7f-afc5-6a222171e3cb HTTP/1.1" 200 OK
+2026-07-13 14:18:10,987 - brain_service.services.chat_service - INFO - Chat history requested for missing session
+INFO:     127.0.0.1:61806 - "GET /api/chats/b724c650-ad0a-4e7f-afc5-6a222171e3cb HTTP/1.1" 200 OK
+2026-07-13 14:18:11,964 - brain_service.services.chat_service - INFO - Chat history requested for missing session
+INFO:     127.0.0.1:61806 - "GET /api/chats/7bdbd467-e035-4e02-a4cf-fddbd0b6f9a3 HTTP/1.1" 200 OK
+2026-07-13 14:18:14,182 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 14:18:14,182 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:top
+2026-07-13 14:18:14,183 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 14:18:14,183 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 14:18:14,186 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:history_list
+INFO:     127.0.0.1:61806 - "GET /api/study/state?session_id=70d765cd-879f-4a11-9b68-32e6e2879343 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49753 - "GET /api/study/categories HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58109 - "GET /api/study/categories HTTP/1.1" 200 OK
+2026-07-13 14:18:14,743 - api.study - INFO - Bookshelf request: ref='Chullin 73b:1', session_id='70d765cd-879f-4a11-9b68-32e6e2879343', categories=['Commentary']
+2026-07-13 14:18:14,746 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 73b:1' via /api/links/
+INFO:     127.0.0.1:58109 - "GET /api/admin/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49753 - "GET /api/admin/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60729 - "GET /api/admin/config HTTP/1.1" 200 OK
+2026-07-13 14:18:14,838 - api.study - INFO - Bookshelf request: ref='Chullin 73b:1', session_id='70d765cd-879f-4a11-9b68-32e6e2879343', categories=['Commentary']
+2026-07-13 14:18:14,839 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 73b:1' via /api/links/
+INFO:     127.0.0.1:49753 - "GET /api/admin/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49753 - "GET /api/admin/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49753 - "GET /api/admin/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60729 - "GET /api/highlight/sages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58354 - "GET /api/highlight/concepts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60729 - "GET /api/highlight/concepts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49753 - "GET /api/highlight/sages HTTP/1.1" 200 OK
+2026-07-13 14:18:15,574 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 73b:1:1' using legacy API
+2026-07-13 14:18:15,580 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 73b:1' using legacy API
+2026-07-13 14:18:15,581 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 73b:1' using legacy API
+2026-07-13 14:18:15,584 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 73b:1:1' using legacy API
+2026-07-13 14:18:15,586 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 73b:1' using legacy API
+2026-07-13 14:18:15,586 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 73b:1' using legacy API
+2026-07-13 14:18:16,120 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 14:18:16,120 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:top
+2026-07-13 14:18:16,122 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 14:18:16,122 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 14:18:16,133 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 14:18:16,134 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:top
+2026-07-13 14:18:16,135 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 14:18:16,135 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 14:18:16,140 - brain_service.services.study_state - INFO - Replaced snapshot for session '70d765cd-879f-4a11-9b68-32e6e2879343' at index 0.
+INFO:     127.0.0.1:60421 - "POST /api/study/bookshelf HTTP/1.1" 200 OK
+2026-07-13 14:18:16,172 - brain_service.services.study_state - INFO - Replaced snapshot for session '70d765cd-879f-4a11-9b68-32e6e2879343' at index 0.
+INFO:     127.0.0.1:61806 - "POST /api/study/bookshelf HTTP/1.1" 200 OK
+2026-07-13 14:18:17,121 - api.tts - ERROR - Proxy voices failed: All connection attempts failed
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\api\tts.py", line 54, in list_voices
+    resp = await client.get(url)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:58109 - "GET /api/tts/voices HTTP/1.1" 500 Internal Server Error
+2026-07-13 14:18:18,866 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:1)
+2026-07-13 14:18:18,867 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+2026-07-13 14:18:19,462 - api.tts - ERROR - Proxy voices failed: All connection attempts failed
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\api\tts.py", line 54, in list_voices
+    resp = await client.get(url)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:61806 - "GET /api/tts/voices HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58109 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+2026-07-13 14:18:19,612 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:1)
+INFO:     127.0.0.1:61806 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+2026-07-13 14:18:21,774 - api.tts - ERROR - Proxy voices failed: All connection attempts failed
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\api\tts.py", line 54, in list_voices
+    resp = await client.get(url)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:60421 - "GET /api/tts/voices HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58109 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A2 HTTP/1.1" 200 OK
+2026-07-13 14:18:21,903 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:2)
+2026-07-13 14:18:21,905 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+2026-07-13 14:18:21,917 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='70d765cd-879f-4a11-9b68-32e6e2879343', ref='Chullin 74b:2', window_size=5
+2026-07-13 14:18:21,917 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 14:18:21,918 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:2
+2026-07-13 14:18:21,918 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:2' via /api/links/
+2026-07-13 14:18:21,920 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:2' using legacy API
+2026-07-13 14:18:22,466 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:1' using legacy API
+2026-07-13 14:18:22,466 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:3' using legacy API
+2026-07-13 14:18:22,785 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:2:1' using legacy API
+2026-07-13 14:18:22,786 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:2:2' using legacy API
+2026-07-13 14:18:22,787 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:2:3' using legacy API
+2026-07-13 14:18:22,789 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chidushei Chatam Sofer on Chullin 74b:1' using legacy API
+2026-07-13 14:18:22,790 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 74b:1' using legacy API
+2026-07-13 14:18:22,791 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:2' using legacy API
+2026-07-13 14:18:22,791 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Seder HaDorot, Tanaim and Amoraim 527:6' using legacy API
+2026-07-13 14:18:23,050 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:4' using legacy API
+2026-07-13 14:18:23,243 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:5' using legacy API
+2026-07-13 14:18:23,440 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 14:18:23,632 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 14:18:23,821 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE COMPLETE: window_data=True, bookshelf_data=True
+2026-07-13 14:18:23,821 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=7, ref=Chullin 74b:2
+2026-07-13 14:18:23,821 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading existing snapshot
+2026-07-13 14:18:23,821 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 14:18:23,821 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:top
+2026-07-13 14:18:23,822 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 14:18:23,822 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 14:18:23,823 - brain_service.services.study_service - INFO - \U0001f525 LOADING CHAT HISTORY: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 14:18:23,824 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:history_list
+2026-07-13 14:18:23,824 - brain_service.services.study_service - INFO - \U0001f525 CHAT HISTORY LOADED: 0 messages
+2026-07-13 14:18:23,824 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=70d765cd-879f-4a11-9b68-32e6e2879343, segments_count=7
+2026-07-13 14:18:23,827 - brain_service.services.study_state - INFO - Replaced snapshot for session '70d765cd-879f-4a11-9b68-32e6e2879343' at index 0.
+2026-07-13 14:18:23,827 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=70d765cd-879f-4a11-9b68-32e6e2879343, success=True
+INFO:     127.0.0.1:60421 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58109 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A2 HTTP/1.1" 200 OK
+2026-07-13 14:18:24,086 - api.tts - ERROR - Proxy voices failed: All connection attempts failed
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\api\tts.py", line 54, in list_voices
+    resp = await client.get(url)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:61806 - "GET /api/tts/voices HTTP/1.1" 500 Internal Server Error
+2026-07-13 14:18:26,403 - api.tts - ERROR - Proxy voices failed: All connection attempts failed
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\api\tts.py", line 54, in list_voices
+    resp = await client.get(url)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:58109 - "GET /api/tts/voices HTTP/1.1" 500 Internal Server Error
+2026-07-13 14:18:28,733 - api.tts - ERROR - Proxy voices failed: All connection attempts failed
+Traceback (most recent call last):
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\api\tts.py", line 54, in list_voices
+    resp = await client.get(url)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\Python311\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\AI\astra\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:61806 - "GET /api/tts/voices HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58109 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A1 HTTP/1.1" 200 OK
+2026-07-13 14:18:29,785 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:1)
+2026-07-13 14:18:29,790 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='70d765cd-879f-4a11-9b68-32e6e2879343', ref='Chullin 74b:1', window_size=5
+2026-07-13 14:18:29,790 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 14:18:29,790 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:1
+2026-07-13 14:18:29,791 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:1' via /api/links/
+INFO:     127.0.0.1:58109 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A1 HTTP/1.1" 200 OK
+2026-07-13 14:18:30,630 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:1:1' using legacy API
+2026-07-13 14:18:30,631 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:1:2' using legacy API
+2026-07-13 14:18:30,632 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:1' using legacy API
+2026-07-13 14:18:30,632 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rif Chullin 25a:3' using legacy API
+2026-07-13 14:18:30,635 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, Forbidden Foods 5:15' using legacy API
+2026-07-13 14:18:30,635 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Sefer HaTerumah, Psakim 41:1' using legacy API
+2026-07-13 14:18:30,636 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 13:3' using legacy API
+2026-07-13 14:18:30,637 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 13' using legacy API
+2026-07-13 14:18:30,637 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Menachot 30b:9' using legacy API
+2026-07-13 14:18:30,640 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishnah Chullin 4:5' using legacy API
+2026-07-13 14:18:30,641 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishpetei Uziel, Volume IV, Choshen Mishpat 46:11' using legacy API
+2026-07-13 14:18:30,642 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Responsa Benei Banim, Volume I 27:4' using legacy API
+2026-07-13 14:18:31,404 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=70d765cd-879f-4a11-9b68-32e6e2879343, ref=Chullin 74b:1, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:61806 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 14:18:53,817 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 73b.1', window_size=30
+2026-07-13 14:18:53,818 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 14:18:53,818 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 73b.1
+2026-07-13 14:18:53,818 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 73b.1' via /api/links/
+2026-07-13 14:18:53,820 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b.1' using legacy API
+2026-07-13 14:18:54,382 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:2' using legacy API
+2026-07-13 14:18:54,573 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:3' using legacy API
+2026-07-13 14:18:54,730 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:4' using legacy API
+2026-07-13 14:18:54,896 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:5' using legacy API
+2026-07-13 14:18:55,052 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:6' using legacy API
+2026-07-13 14:18:55,210 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:7' using legacy API
+2026-07-13 14:18:55,369 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:8' using legacy API
+2026-07-13 14:18:55,527 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:9' using legacy API
+2026-07-13 14:18:55,684 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:10' using legacy API
+2026-07-13 14:18:55,839 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:11' using legacy API
+2026-07-13 14:18:55,997 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:12' using legacy API
+2026-07-13 14:18:56,155 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 73b:13' using legacy API
+2026-07-13 14:18:56,308 - brain_service.services.sefaria_service - WARNING - SEFARIA_SERVICE: Fetch FAILED for Chullin 73b:13 after fallback.
+2026-07-13 14:18:56,309 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:1' using legacy API
+2026-07-13 14:18:56,468 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:2' using legacy API
+2026-07-13 14:18:56,624 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:3' using legacy API
+2026-07-13 14:18:56,781 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:4' using legacy API
+2026-07-13 14:18:56,937 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:5' using legacy API
+2026-07-13 14:18:57,096 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:6' using legacy API
+2026-07-13 14:18:57,252 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:7' using legacy API
+2026-07-13 14:18:57,407 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:8' using legacy API
+2026-07-13 14:18:57,562 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:9' using legacy API
+2026-07-13 14:18:57,719 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:10' using legacy API
+2026-07-13 14:18:57,877 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:11' using legacy API
+2026-07-13 14:18:58,032 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:12' using legacy API
+2026-07-13 14:18:58,188 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:13' using legacy API
+2026-07-13 14:18:58,347 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:14' using legacy API
+2026-07-13 14:18:58,505 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:15' using legacy API
+2026-07-13 14:18:58,661 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:16' using legacy API
+2026-07-13 14:18:58,817 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:17' using legacy API
+2026-07-13 14:18:58,975 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74a:18' using legacy API
+2026-07-13 14:18:59,130 - brain_service.services.sefaria_service - WARNING - SEFARIA_SERVICE: Fetch FAILED for Chullin 74a:18 after fallback.
+2026-07-13 14:18:59,132 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE COMPLETE: window_data=True, bookshelf_data=True
+2026-07-13 14:18:59,132 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=31, ref=Chullin 73b.1
+2026-07-13 14:18:59,132 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading existing snapshot
+2026-07-13 14:18:59,132 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 14:18:59,132 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 14:18:59,132 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: False
+2026-07-13 14:18:59,133 - brain_service.services.study_state - WARNING - STUDY_STATE: No snapshot found for key: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 14:18:59,133 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, segments_count=31
+2026-07-13 14:18:59,137 - brain_service.services.study_state - INFO - Pushed new snapshot for session '7bc50bd8-45a4-4ce5-aad1-0bad38062f24' at index 0.
+2026-07-13 14:18:59,137 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, success=True
+INFO:     127.0.0.1:53660 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+2026-07-13 14:18:59,173 - api.chat - ERROR - Failed to get daily calendar: 'No time zone found with key America/New_York'
+INFO:     127.0.0.1:59789 - "GET /api/daily/calendar HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:64560 - "OPTIONS /api/study/state?session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24 HTTP/1.1" 200 OK
+2026-07-13 14:18:59,180 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b.1)
+INFO:     127.0.0.1:57186 - "GET /api/study/talmud/comments?ref=Chullin%2073b.1 HTTP/1.1" 200 OK
+2026-07-13 14:18:59,204 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 14:18:59,204 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 14:18:59,205 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 14:18:59,205 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 14:18:59,208 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:history_list
+INFO:     127.0.0.1:64560 - "GET /api/study/state?session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24 HTTP/1.1" 200 OK
+2026-07-13 14:18:59,229 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:1)
+INFO:     127.0.0.1:64560 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53660 - "GET /api/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55847 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A15 HTTP/1.1" 200 OK
+2026-07-13 14:19:05,141 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:15)
+2026-07-13 14:19:05,142 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:57465 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A11 HTTP/1.1" 200 OK
+2026-07-13 14:19:06,553 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:11)
+2026-07-13 14:19:06,554 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:50761 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A8 HTTP/1.1" 200 OK
+2026-07-13 14:19:07,636 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:8)
+2026-07-13 14:19:07,636 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:55847 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57465 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A11 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57465 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A5 HTTP/1.1" 200 OK
+2026-07-13 14:19:08,648 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:5)
+INFO:     127.0.0.1:57465 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50761 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50761 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A3 HTTP/1.1" 200 OK
+2026-07-13 14:19:10,202 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:3)
+INFO:     127.0.0.1:50761 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50761 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A7 HTTP/1.1" 200 OK
+2026-07-13 14:19:13,913 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:7)
+INFO:     127.0.0.1:50761 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50761 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A8 HTTP/1.1" 200 OK
+2026-07-13 14:19:14,910 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:8)
+INFO:     127.0.0.1:50761 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50761 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:19:16,988 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+INFO:     127.0.0.1:50761 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:19:31,001 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+2026-07-13 14:19:31,002 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:54615 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:19:42,242 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:8)
+INFO:     127.0.0.1:58493 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A8 HTTP/1.1" 200 OK
+2026-07-13 14:19:42,781 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+INFO:     127.0.0.1:58493 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:20:38,925 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+2026-07-13 14:20:38,926 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:58787 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53935 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A8 HTTP/1.1" 200 OK
+2026-07-13 14:31:04,264 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:8)
+2026-07-13 14:31:04,265 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:53935 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64285 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:31:13,509 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+INFO:     127.0.0.1:64285 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57628 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A10 HTTP/1.1" 200 OK
+2026-07-13 14:33:04,660 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:10)
+2026-07-13 14:33:04,663 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+2026-07-13 14:33:05,688 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+2026-07-13 14:33:05,689 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:57628 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52375 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:33:08,505 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:10)
+INFO:     127.0.0.1:52375 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A10 HTTP/1.1" 200 OK
+2026-07-13 14:33:09,631 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+INFO:     127.0.0.1:52375 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:33:11,160 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:10)
+INFO:     127.0.0.1:52375 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A10 HTTP/1.1" 200 OK
+2026-07-13 14:33:12,910 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:9)
+INFO:     127.0.0.1:52375 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A9 HTTP/1.1" 200 OK
+2026-07-13 14:34:06,932 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:10)
+2026-07-13 14:34:06,934 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:55140 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53209 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A11 HTTP/1.1" 200 OK
+2026-07-13 14:46:54,371 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:11)
+2026-07-13 14:46:54,371 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:53209 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A11 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63330 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 14:47:09,567 - api.actions - INFO - Received term explanation request
+2026-07-13 14:47:09,568 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:47:10,101 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:47:10,103 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:63330 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 14:47:12,245 - brain_service.services.lexicon_service - INFO - Lexicon cache HIT
+2026-07-13 14:47:12,245 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:47:12,406 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:47:12,408 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+2026-07-13 14:47:12,408 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:47:12,569 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:47:12,570 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+2026-07-13 14:47:13,321 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:47:13,484 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:47:13,485 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+2026-07-13 14:47:14,108 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:47:14,387 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:47:14,431 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:63330 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63330 - "POST /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62609 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A12 HTTP/1.1" 200 OK
+2026-07-13 14:49:51,476 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:12)
+2026-07-13 14:49:51,477 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:62609 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64112 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A1 HTTP/1.1" 200 OK
+2026-07-13 14:52:06,166 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:1)
+2026-07-13 14:52:06,167 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:64112 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57943 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A2 HTTP/1.1" 200 OK
+2026-07-13 14:54:23,781 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:2)
+2026-07-13 14:54:23,783 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:57943 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A2 HTTP/1.1" 200 OK
+2026-07-13 14:55:51,104 - api.actions - INFO - Received term explanation request
+2026-07-13 14:55:51,105 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:55:51,638 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:55:51,659 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:64279 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 14:55:53,514 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:55:53,682 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:55:53,684 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:64279 - "POST /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53411 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A3 HTTP/1.1" 200 OK
+2026-07-13 14:56:42,252 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:3)
+2026-07-13 14:56:42,254 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:53411 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60041 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 14:57:34,545 - api.actions - INFO - Received term explanation request
+2026-07-13 14:57:34,546 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 14:57:35,150 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 14:57:35,154 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:60041 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60041 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60041 - "POST /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49982 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A4 HTTP/1.1" 200 OK
+2026-07-13 14:59:57,849 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:4)
+2026-07-13 14:59:57,850 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:49982 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50485 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A5 HTTP/1.1" 200 OK
+2026-07-13 15:02:42,327 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:5)
+2026-07-13 15:02:42,329 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:50485 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A5 HTTP/1.1" 200 OK
+2026-07-13 15:03:38,047 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:4)
+INFO:     127.0.0.1:61527 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A4 HTTP/1.1" 200 OK
+2026-07-13 15:04:01,786 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:5)
+2026-07-13 15:04:01,787 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:64042 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60070 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A6 HTTP/1.1" 200 OK
+2026-07-13 15:11:32,969 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:6)
+2026-07-13 15:11:32,970 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:60070 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61855 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 15:13:57,417 - api.actions - INFO - Received term explanation request
+2026-07-13 15:13:57,419 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 15:13:57,970 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 15:13:57,990 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:61855 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61855 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61855 - "POST /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52461 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A7 HTTP/1.1" 200 OK
+2026-07-13 15:17:25,288 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:7)
+2026-07-13 15:17:25,290 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:52461 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51420 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A8 HTTP/1.1" 200 OK
+2026-07-13 15:22:08,959 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:8)
+2026-07-13 15:22:08,961 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:51420 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62803 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A9 HTTP/1.1" 200 OK
+2026-07-13 15:24:49,734 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:9)
+2026-07-13 15:24:49,735 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:62803 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A9 HTTP/1.1" 200 OK
+2026-07-13 15:25:17,418 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:8)
+INFO:     127.0.0.1:61524 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A8 HTTP/1.1" 200 OK
+2026-07-13 15:25:26,925 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:9)
+INFO:     127.0.0.1:58090 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49338 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A10 HTTP/1.1" 200 OK
+2026-07-13 15:51:06,519 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:10)
+2026-07-13 15:51:06,521 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:49338 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54617 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A11 HTTP/1.1" 200 OK
+2026-07-13 15:57:49,559 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:11)
+2026-07-13 15:57:49,560 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:54617 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A11 HTTP/1.1" 200 OK
+2026-07-13 15:57:52,862 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:10)
+INFO:     127.0.0.1:54617 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A10 HTTP/1.1" 200 OK
+2026-07-13 15:58:12,709 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:11)
+INFO:     127.0.0.1:50160 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A11 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52349 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A12 HTTP/1.1" 200 OK
+2026-07-13 15:59:09,267 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:12)
+2026-07-13 15:59:09,270 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:52349 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A12 HTTP/1.1" 200 OK
+2026-07-13 16:04:04,516 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:11)
+2026-07-13 16:04:04,517 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:59396 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A11 HTTP/1.1" 200 OK
+2026-07-13 16:04:07,497 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:12)
+INFO:     127.0.0.1:59396 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63681 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A13 HTTP/1.1" 200 OK
+2026-07-13 16:04:47,314 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:13)
+INFO:     127.0.0.1:63681 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A13 HTTP/1.1" 200 OK
+2026-07-13 16:05:26,846 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:12)
+2026-07-13 16:05:26,848 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:50880 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A12 HTTP/1.1" 200 OK
+2026-07-13 16:07:11,374 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:13)
+2026-07-13 16:07:11,375 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:50814 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A13 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62896 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A14 HTTP/1.1" 200 OK
+2026-07-13 16:08:45,147 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:14)
+2026-07-13 16:08:45,148 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:62896 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A14 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51267 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:10:05,193 - api.actions - INFO - Received term explanation request
+2026-07-13 16:10:05,194 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:10:05,786 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:10:05,808 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:51267 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:10:07,575 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:10:07,746 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:10:07,748 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:51267 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51267 - "POST /api/xp/event HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50910 - "POST /api/auth/refresh HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51267 - "OPTIONS /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50910 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51267 - "OPTIONS /api/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54542 - "OPTIONS /api/daily/calendar HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58985 - "OPTIONS /api/study/state?session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/admin/personalities/public?t=1783948214007 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/xp/profile HTTP/1.1" 200 OK
+2026-07-13 16:10:14,020 - api.chat - ERROR - Failed to get daily calendar: 'No time zone found with key America/New_York'
+INFO:     127.0.0.1:54542 - "GET /api/daily/calendar HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:52963 - "OPTIONS /api/admin/personalities/public?t=1783948214010 HTTP/1.1" 200 OK
+2026-07-13 16:10:14,037 - api.chat - ERROR - Failed to get daily calendar: 'No time zone found with key America/New_York'
+INFO:     127.0.0.1:50449 - "GET /api/admin/personalities/public?t=1783948214007 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54542 - "GET /api/daily/calendar HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:52963 - "GET /api/admin/personalities/public?t=1783948214010 HTTP/1.1" 200 OK
+2026-07-13 16:10:14,053 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 16:10:14,053 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 16:10:14,057 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 16:10:14,057 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 16:10:14,064 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:history_list
+INFO:     127.0.0.1:51267 - "GET /api/study/state?session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62385 - "GET /api/xp/profile HTTP/1.1" 200 OK
+2026-07-13 16:10:14,079 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 16:10:14,079 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 16:10:14,087 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 16:10:14,087 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 16:10:14,093 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:history_list
+INFO:     127.0.0.1:52963 - "GET /api/study/state?session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+2026-07-13 16:10:14,110 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:1)
+2026-07-13 16:10:14,113 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 73b'
+INFO:     127.0.0.1:58985 - "GET /api/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "GET /api/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62385 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+2026-07-13 16:10:15,221 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 73b (original: Chullin 73b:1)
+INFO:     127.0.0.1:52963 - "GET /api/study/talmud/comments?ref=Chullin%2073b%3A1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A4 HTTP/1.1" 200 OK
+2026-07-13 16:10:17,539 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:4)
+2026-07-13 16:10:17,541 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:52963 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A16 HTTP/1.1" 200 OK
+2026-07-13 16:10:20,837 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:16)
+INFO:     127.0.0.1:52963 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A16 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52963 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A15 HTTP/1.1" 200 OK
+2026-07-13 16:10:23,070 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:15)
+INFO:     127.0.0.1:52963 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A15 HTTP/1.1" 200 OK
+2026-07-13 16:10:24,554 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:14)
+INFO:     127.0.0.1:52963 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A14 HTTP/1.1" 200 OK
+2026-07-13 16:13:06,744 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:15)
+2026-07-13 16:13:06,746 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:57105 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A15 HTTP/1.1" 200 OK
+2026-07-13 16:14:11,648 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:16)
+2026-07-13 16:14:11,650 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:53368 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A16 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61935 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074a%3A17 HTTP/1.1" 200 OK
+2026-07-13 16:14:57,442 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:17)
+INFO:     127.0.0.1:61935 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A17 HTTP/1.1" 200 OK
+2026-07-13 16:15:08,143 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:16)
+INFO:     127.0.0.1:54026 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A16 HTTP/1.1" 200 OK
+2026-07-13 16:15:18,008 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:17)
+2026-07-13 16:15:18,009 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:63729 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A17 HTTP/1.1" 200 OK
+2026-07-13 16:15:20,660 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:16)
+INFO:     127.0.0.1:63729 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A16 HTTP/1.1" 200 OK
+2026-07-13 16:16:31,562 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74a (original: Chullin 74a:17)
+2026-07-13 16:16:31,563 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74a'
+INFO:     127.0.0.1:56833 - "GET /api/study/talmud/comments?ref=Chullin%2074a%3A17 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50300 - "OPTIONS /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59961 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A1 HTTP/1.1" 200 OK
+2026-07-13 16:16:44,225 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:1)
+2026-07-13 16:16:44,226 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+2026-07-13 16:16:44,231 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:1', window_size=5
+2026-07-13 16:16:44,231 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:16:44,231 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:1
+2026-07-13 16:16:44,233 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:1' via /api/links/
+2026-07-13 16:16:44,234 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:1' using legacy API
+2026-07-13 16:16:44,958 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:1:2' using legacy API
+2026-07-13 16:16:44,960 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:1:1' using legacy API
+2026-07-13 16:16:44,961 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rif Chullin 25a:3' using legacy API
+2026-07-13 16:16:44,961 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:1' using legacy API
+2026-07-13 16:16:44,962 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, Forbidden Foods 5:15' using legacy API
+2026-07-13 16:16:44,963 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Sefer HaTerumah, Psakim 41:1' using legacy API
+2026-07-13 16:16:45,001 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 13:3' using legacy API
+2026-07-13 16:16:45,002 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 13' using legacy API
+2026-07-13 16:16:45,003 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Menachot 30b:9' using legacy API
+2026-07-13 16:16:45,003 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishnah Chullin 4:5' using legacy API
+2026-07-13 16:16:45,004 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishpetei Uziel, Volume IV, Choshen Mishpat 46:11' using legacy API
+2026-07-13 16:16:45,007 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Responsa Benei Banim, Volume I 27:4' using legacy API
+2026-07-13 16:16:45,048 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:2' using legacy API
+2026-07-13 16:16:45,207 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:3' using legacy API
+2026-07-13 16:16:45,366 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:4' using legacy API
+INFO:     127.0.0.1:59961 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A1 HTTP/1.1" 200 OK
+2026-07-13 16:16:45,531 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:5' using legacy API
+2026-07-13 16:16:45,626 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:1, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:50300 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:16:45,688 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+INFO:     127.0.0.1:65189 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A2 HTTP/1.1" 200 OK
+2026-07-13 16:17:44,075 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:2)
+2026-07-13 16:17:44,076 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:2', window_size=5
+2026-07-13 16:17:44,076 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:17:44,076 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:2
+2026-07-13 16:17:44,076 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:2' via /api/links/
+INFO:     127.0.0.1:65189 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A2 HTTP/1.1" 200 OK
+2026-07-13 16:17:44,104 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:17:44,834 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:2:1' using legacy API
+2026-07-13 16:17:44,834 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:2:3' using legacy API
+2026-07-13 16:17:44,835 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:2:2' using legacy API
+2026-07-13 16:17:44,835 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chidushei Chatam Sofer on Chullin 74b:1' using legacy API
+2026-07-13 16:17:44,836 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:2' using legacy API
+2026-07-13 16:17:44,836 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 74b:1' using legacy API
+2026-07-13 16:17:44,836 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Seder HaDorot, Tanaim and Amoraim 527:6' using legacy API
+2026-07-13 16:17:45,356 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE COMPLETE: window_data=True, bookshelf_data=True
+2026-07-13 16:17:45,356 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=7, ref=Chullin 74b:2
+2026-07-13 16:17:45,356 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading existing snapshot
+2026-07-13 16:17:45,356 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 16:17:45,356 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 16:17:45,358 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 16:17:45,358 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 16:17:45,358 - brain_service.services.study_service - INFO - \U0001f525 LOADING CHAT HISTORY: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 16:17:45,359 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:history_list
+2026-07-13 16:17:45,359 - brain_service.services.study_service - INFO - \U0001f525 CHAT HISTORY LOADED: 0 messages
+2026-07-13 16:17:45,359 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, segments_count=7
+2026-07-13 16:17:45,408 - brain_service.services.study_state - INFO - Replaced snapshot for session '7bc50bd8-45a4-4ce5-aad1-0bad38062f24' at index 0.
+2026-07-13 16:17:45,408 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, success=True
+INFO:     127.0.0.1:61859 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59315 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A3 HTTP/1.1" 200 OK
+2026-07-13 16:22:41,265 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:3)
+2026-07-13 16:22:41,266 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:59315 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64049 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A4 HTTP/1.1" 200 OK
+2026-07-13 16:27:33,502 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:4)
+2026-07-13 16:27:33,504 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:64049 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55243 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:29:58,320 - api.actions - INFO - Received term explanation request
+2026-07-13 16:29:58,321 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:29:58,900 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:29:58,920 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:55243 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:30:00,254 - brain_service.services.lexicon_service - INFO - Lexicon cache HIT
+2026-07-13 16:30:00,255 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:30:00,414 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:30:00,416 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+2026-07-13 16:30:01,357 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:30:01,528 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:30:01,530 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:55243 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55243 - "POST /api/xp/event HTTP/1.1" 200 OK
+2026-07-13 16:30:25,256 - api.actions - INFO - Received term explanation request
+2026-07-13 16:30:25,257 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:30:25,794 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:30:25,796 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:55795 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:30:28,412 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:30:28,583 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:30:28,585 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:55795 - "POST /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55949 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A5 HTTP/1.1" 200 OK
+2026-07-13 16:31:11,343 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:5)
+2026-07-13 16:31:11,345 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:55949 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63946 - "OPTIONS /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50827 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A6 HTTP/1.1" 200 OK
+2026-07-13 16:34:01,345 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:6', window_size=5
+2026-07-13 16:34:01,345 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:34:01,345 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:6
+2026-07-13 16:34:01,346 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:6' via /api/links/
+2026-07-13 16:34:01,347 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 16:34:01,349 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:6)
+2026-07-13 16:34:01,350 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+2026-07-13 16:34:01,980 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:5' using legacy API
+2026-07-13 16:34:01,980 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:34:02,143 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:4' using legacy API
+2026-07-13 16:34:02,296 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:6:1' using legacy API
+2026-07-13 16:34:02,297 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chiddushei Ramban on Chullin 74b:1' using legacy API
+2026-07-13 16:34:02,298 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Dor Revi'i on Chullin 74b:1:1-2' using legacy API
+2026-07-13 16:34:02,300 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rif Chullin 25a:4' using legacy API
+2026-07-13 16:34:02,301 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:6' using legacy API
+2026-07-13 16:34:02,301 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, Forbidden Foods 6:4' using legacy API
+2026-07-13 16:34:02,303 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 64:2' using legacy API
+2026-07-13 16:34:02,304 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 66:1' using legacy API
+2026-07-13 16:34:02,306 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 64' using legacy API
+2026-07-13 16:34:02,307 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 66' using legacy API
+2026-07-13 16:34:02,307 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishpetei Uziel, Volume II, Yoreh De'ah 11:17' using legacy API
+2026-07-13 16:34:02,308 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Noda BiYehudah II, Yoreh De'ah 35:7' using legacy API
+2026-07-13 16:34:02,311 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:3' using legacy API
+2026-07-13 16:34:02,527 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:34:02,736 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:34:02,841 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:2' using legacy API
+2026-07-13 16:34:02,844 - core.utils - ERROR - Sefaria API HTTP error for https://www.sefaria.org/api/texts/Noda%20BiYehudah%20II%2C%20Yoreh%20De%27ah%2035%3A7: 400 {"error": "Unable to find text for that ref"}
+2026-07-13 16:34:02,844 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Legacy API failed for Noda BiYehudah II, Yoreh De'ah 35:7, trying V3
+2026-07-13 16:34:02,999 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:1' using legacy API
+2026-07-13 16:34:03,052 - core.utils - ERROR - Sefaria API HTTP error for https://www.sefaria.org/api/v3/texts/Noda%20BiYehudah%20II%2C%20Yoreh%20De%27ah%2035%3A7: 400 {"error": "You passed 'Noda BiYehudah II', please pass a more specific ref for this book, and try again. 'Noda BiYehudah II' is a 'complex' book-level ref. We only support book-level refs in cases of texts with a 'simple' structure. To learn more about the structure of a text on Sefaria, see: https://developers.sefaria.org/docs/the-structure-of-a-simple-text"}
+2026-07-13 16:34:03,053 - brain_service.services.sefaria_service - WARNING - SEFARIA_SERVICE: Fetch FAILED for Noda BiYehudah II, Yoreh De'ah 35:7 after fallback.
+2026-07-13 16:34:03,055 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:6, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:63946 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50827 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A6 HTTP/1.1" 200 OK
+2026-07-13 16:34:03,067 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 16:34:03,281 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+2026-07-13 16:34:16,881 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:4)
+INFO:     127.0.0.1:53943 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53943 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A3 HTTP/1.1" 200 OK
+2026-07-13 16:34:18,023 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:3)
+INFO:     127.0.0.1:53943 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A3 HTTP/1.1" 200 OK
+2026-07-13 16:34:36,939 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:4)
+INFO:     127.0.0.1:49983 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A4 HTTP/1.1" 200 OK
+2026-07-13 16:38:53,712 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:5)
+2026-07-13 16:38:53,714 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:64540 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A5 HTTP/1.1" 200 OK
+2026-07-13 16:38:57,123 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:6)
+2026-07-13 16:38:57,131 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:6', window_size=5
+2026-07-13 16:38:57,131 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:38:57,131 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:6
+2026-07-13 16:38:57,131 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:6' via /api/links/
+2026-07-13 16:38:57,134 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+INFO:     127.0.0.1:50770 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A6 HTTP/1.1" 200 OK
+2026-07-13 16:38:57,486 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:6:1' using legacy API
+2026-07-13 16:38:57,487 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rif Chullin 25a:4' using legacy API
+2026-07-13 16:38:57,487 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chiddushei Ramban on Chullin 74b:1' using legacy API
+2026-07-13 16:38:57,488 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Dor Revi'i on Chullin 74b:1:1-2' using legacy API
+2026-07-13 16:38:57,488 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:6' using legacy API
+2026-07-13 16:38:57,489 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, Forbidden Foods 6:4' using legacy API
+2026-07-13 16:38:57,491 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 64:2' using legacy API
+2026-07-13 16:38:57,492 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 66:1' using legacy API
+2026-07-13 16:38:57,493 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 64' using legacy API
+2026-07-13 16:38:57,494 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 66' using legacy API
+2026-07-13 16:38:57,494 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishpetei Uziel, Volume II, Yoreh De'ah 11:17' using legacy API
+2026-07-13 16:38:57,497 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Noda BiYehudah II, Yoreh De'ah 35:7' using legacy API
+2026-07-13 16:38:57,661 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:5' using legacy API
+2026-07-13 16:38:57,662 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:38:57,820 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:38:57,822 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:4' using legacy API
+2026-07-13 16:38:57,981 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:3' using legacy API
+2026-07-13 16:38:57,984 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:38:58,062 - core.utils - ERROR - Sefaria API HTTP error for https://www.sefaria.org/api/texts/Noda%20BiYehudah%20II%2C%20Yoreh%20De%27ah%2035%3A7: 400 {"error": "Unable to find text for that ref"}
+2026-07-13 16:38:58,062 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Legacy API failed for Noda BiYehudah II, Yoreh De'ah 35:7, trying V3
+2026-07-13 16:38:58,140 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 16:38:58,143 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:2' using legacy API
+2026-07-13 16:38:58,272 - core.utils - ERROR - Sefaria API HTTP error for https://www.sefaria.org/api/v3/texts/Noda%20BiYehudah%20II%2C%20Yoreh%20De%27ah%2035%3A7: 400 {"error": "You passed 'Noda BiYehudah II', please pass a more specific ref for this book, and try again. 'Noda BiYehudah II' is a 'complex' book-level ref. We only support book-level refs in cases of texts with a 'simple' structure. To learn more about the structure of a text on Sefaria, see: https://developers.sefaria.org/docs/the-structure-of-a-simple-text"}
+2026-07-13 16:38:58,272 - brain_service.services.sefaria_service - WARNING - SEFARIA_SERVICE: Fetch FAILED for Noda BiYehudah II, Yoreh De'ah 35:7 after fallback.
+2026-07-13 16:38:58,272 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:6, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:64540 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:38:58,299 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+2026-07-13 16:38:58,316 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:1' using legacy API
+2026-07-13 16:42:38,096 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:7', window_size=5
+2026-07-13 16:42:38,096 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:42:38,097 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:7
+INFO:     127.0.0.1:56864 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A7 HTTP/1.1" 200 OK
+2026-07-13 16:42:38,097 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:7' via /api/links/
+2026-07-13 16:42:38,101 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:42:38,102 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:7)
+2026-07-13 16:42:38,105 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+2026-07-13 16:42:38,698 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 16:42:38,699 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:42:38,856 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:5' using legacy API
+2026-07-13 16:42:38,915 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:7:1' using legacy API
+2026-07-13 16:42:38,915 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:7:2' using legacy API
+2026-07-13 16:42:38,916 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 74b:7' using legacy API
+2026-07-13 16:42:38,916 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 74b:8' using legacy API
+2026-07-13 16:42:38,916 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:7' using legacy API
+2026-07-13 16:42:38,917 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Halakhot Gedolot 66:5' using legacy API
+2026-07-13 16:42:39,014 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:4' using legacy API
+2026-07-13 16:42:39,175 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:3' using legacy API
+2026-07-13 16:42:39,229 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:42:39,334 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:2' using legacy API
+2026-07-13 16:42:39,390 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+INFO:     127.0.0.1:63083 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A7 HTTP/1.1" 200 OK
+2026-07-13 16:42:39,546 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+2026-07-13 16:42:39,705 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 16:42:39,910 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE COMPLETE: window_data=True, bookshelf_data=True
+2026-07-13 16:42:39,910 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=11, ref=Chullin 74b:7
+2026-07-13 16:42:39,910 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading existing snapshot
+2026-07-13 16:42:39,911 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 16:42:39,911 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:top
+2026-07-13 16:42:39,911 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 16:42:39,912 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 16:42:39,912 - brain_service.services.study_service - INFO - \U0001f525 LOADING CHAT HISTORY: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24
+2026-07-13 16:42:39,913 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:7bc50bd8-45a4-4ce5-aad1-0bad38062f24:history_list
+2026-07-13 16:42:39,913 - brain_service.services.study_service - INFO - \U0001f525 CHAT HISTORY LOADED: 0 messages
+2026-07-13 16:42:39,913 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, segments_count=11
+2026-07-13 16:42:39,915 - brain_service.services.study_state - INFO - Replaced snapshot for session '7bc50bd8-45a4-4ce5-aad1-0bad38062f24' at index 0.
+2026-07-13 16:42:39,915 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, success=True
+INFO:     127.0.0.1:61294 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54638 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A8 HTTP/1.1" 200 OK
+2026-07-13 16:44:01,795 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:8)
+2026-07-13 16:44:01,797 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:54638 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50591 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:46:07,980 - api.actions - INFO - Received term explanation request
+2026-07-13 16:46:07,982 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:46:08,533 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:46:08,552 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:50591 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:46:10,920 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:46:11,186 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:46:11,232 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:50591 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50591 - "POST /api/xp/event HTTP/1.1" 200 OK
+2026-07-13 16:48:26,639 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:7)
+2026-07-13 16:48:26,640 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:59990 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A7 HTTP/1.1" 200 OK
+2026-07-13 16:48:32,486 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:8)
+INFO:     127.0.0.1:59990 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54342 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A9 HTTP/1.1" 200 OK
+2026-07-13 16:48:41,264 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:9)
+INFO:     127.0.0.1:54342 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59885 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A10 HTTP/1.1" 200 OK
+2026-07-13 16:53:12,364 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:10)
+2026-07-13 16:53:12,366 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:59885 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51754 - "OPTIONS /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55321 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A11 HTTP/1.1" 200 OK
+2026-07-13 16:55:50,031 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:11)
+2026-07-13 16:55:50,032 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:11', window_size=5
+2026-07-13 16:55:50,032 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:55:50,032 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:11
+2026-07-13 16:55:50,032 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:11' via /api/links/
+2026-07-13 16:55:50,033 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+2026-07-13 16:55:50,034 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+2026-07-13 16:55:50,592 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 16:55:50,592 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 16:55:50,749 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:55:50,908 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:55:51,067 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:55:51,142 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:13' using legacy API
+2026-07-13 16:55:51,162 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:11:1' using legacy API
+2026-07-13 16:55:51,163 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:11' using legacy API
+2026-07-13 16:55:51,164 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Bekhorot 12a' using legacy API
+2026-07-13 16:55:51,238 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+INFO:     127.0.0.1:55321 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A11 HTTP/1.1" 200 OK
+2026-07-13 16:55:51,333 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:14' using legacy API
+2026-07-13 16:55:51,518 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:15' using legacy API
+2026-07-13 16:55:51,710 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:16' using legacy API
+2026-07-13 16:55:51,863 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:11, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2549, in get_bookshelf_for
+    item["sourceHasEn"] = bool(en_text and en_text.strip())
+                                           ^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:51754 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:57:51,418 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:11', window_size=5
+2026-07-13 16:57:51,418 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:57:51,418 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:11
+2026-07-13 16:57:51,418 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:11' via /api/links/
+2026-07-13 16:57:51,419 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+INFO:     127.0.0.1:64597 - "OPTIONS /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:57:51,578 - api.actions - INFO - Received term explanation request
+2026-07-13 16:57:51,579 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:57:51,585 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:11', window_size=5
+2026-07-13 16:57:51,586 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:57:51,586 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:11
+2026-07-13 16:57:51,586 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:11' via /api/links/
+2026-07-13 16:57:51,588 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+2026-07-13 16:57:52,008 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 16:57:52,008 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 16:57:52,103 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:57:52,105 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:64597 - "POST /api/actions/explain-term HTTP/1.1" 200 OK
+2026-07-13 16:57:52,121 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 16:57:52,121 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 16:57:52,164 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:57:52,183 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:11:1' using legacy API
+2026-07-13 16:57:52,184 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:11' using legacy API
+2026-07-13 16:57:52,185 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Bekhorot 12a' using legacy API
+2026-07-13 16:57:52,278 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:13' using legacy API
+2026-07-13 16:57:52,279 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:57:52,293 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:11:1' using legacy API
+2026-07-13 16:57:52,294 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Bekhorot 12a' using legacy API
+2026-07-13 16:57:52,294 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:11' using legacy API
+2026-07-13 16:57:52,320 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:57:52,433 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:14' using legacy API
+2026-07-13 16:57:52,436 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:57:52,475 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:57:52,519 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:14' using legacy API
+2026-07-13 16:57:52,591 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:57:52,612 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:15' using legacy API
+2026-07-13 16:57:52,628 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 16:57:52,677 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:15' using legacy API
+2026-07-13 16:57:52,747 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 16:57:52,769 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:16' using legacy API
+2026-07-13 16:57:52,832 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:16' using legacy API
+2026-07-13 16:57:52,842 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:11, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2549, in get_bookshelf_for
+    item["sourceHasEn"] = bool(en_text and en_text.strip())
+                                           ^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:49982 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:57:52,937 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:11, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2549, in get_bookshelf_for
+    item["sourceHasEn"] = bool(en_text and en_text.strip())
+                                           ^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:64638 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:57:54,177 - brain_service.services.lexicon_service - INFO - Fetching lexicon entry from Sefaria
+2026-07-13 16:57:54,346 - brain_service.services.lexicon_service - INFO - Successfully fetched lexicon entry
+2026-07-13 16:57:54,348 - brain_service.services.lexicon_service - INFO - Lexicon cache WRITE
+INFO:     127.0.0.1:64597 - "OPTIONS /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64597 - "POST /api/xp/event HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57867 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A12 HTTP/1.1" 200 OK
+2026-07-13 16:58:30,866 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:12', window_size=5
+2026-07-13 16:58:30,866 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:58:30,866 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:12
+2026-07-13 16:58:30,866 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:12' via /api/links/
+2026-07-13 16:58:30,872 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:12)
+2026-07-13 16:58:30,873 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+2026-07-13 16:58:30,877 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:17' using legacy API
+2026-07-13 16:58:31,728 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:12' using legacy API
+2026-07-13 16:58:31,728 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chidushei Chatam Sofer on Chullin 74b:2' using legacy API
+2026-07-13 16:58:31,729 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 321:4' using legacy API
+2026-07-13 16:58:31,729 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, First Fruits and other Gifts to Priests Outside the Sanctuary 12:9' using legacy API
+2026-07-13 16:58:31,729 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 321' using legacy API
+INFO:     127.0.0.1:57867 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A12 HTTP/1.1" 200 OK
+2026-07-13 16:58:32,420 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:12, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:56812 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:59:24,760 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:11)
+2026-07-13 16:59:24,764 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:11', window_size=5
+2026-07-13 16:59:24,764 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:59:24,764 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:11
+2026-07-13 16:59:24,765 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:11' via /api/links/
+2026-07-13 16:59:24,768 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+INFO:     127.0.0.1:65186 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A11 HTTP/1.1" 200 OK
+2026-07-13 16:59:25,310 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 16:59:25,311 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 16:59:25,414 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='7bc50bd8-45a4-4ce5-aad1-0bad38062f24', ref='Chullin 74b:12', window_size=5
+2026-07-13 16:59:25,414 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 16:59:25,414 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:12
+2026-07-13 16:59:25,414 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:12' via /api/links/
+2026-07-13 16:59:25,416 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 16:59:25,418 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:12)
+INFO:     127.0.0.1:54689 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A12 HTTP/1.1" 200 OK
+2026-07-13 16:59:25,465 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 16:59:25,489 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:11:1' using legacy API
+2026-07-13 16:59:25,490 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Bekhorot 12a' using legacy API
+2026-07-13 16:59:25,490 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:11' using legacy API
+2026-07-13 16:59:25,621 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 16:59:25,779 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 16:59:25,841 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:13' using legacy API
+2026-07-13 16:59:25,939 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 16:59:25,950 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:13' using legacy API
+2026-07-13 16:59:25,995 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:14' using legacy API
+2026-07-13 16:59:26,106 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:14' using legacy API
+2026-07-13 16:59:26,118 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:12, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:65186 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:59:26,147 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=7bc50bd8-45a4-4ce5-aad1-0bad38062f24, ref=Chullin 74b:11, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2549, in get_bookshelf_for
+    item["sourceHasEn"] = bool(en_text and en_text.strip())
+                                           ^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:64342 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 16:59:26,153 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:15' using legacy API
+2026-07-13 16:59:26,267 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:15' using legacy API
+2026-07-13 16:59:26,309 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:16' using legacy API
+2026-07-13 16:59:26,429 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:16' using legacy API
+INFO:     127.0.0.1:53074 - "OPTIONS /api/daily/create/daily-2025-11-19-haftarah HTTP/1.1" 200 OK
+2026-07-13 16:59:50,468 - brain_service.services.session_service - INFO - Retrieved daily session
+INFO:     127.0.0.1:53074 - "POST /api/daily/create/daily-2025-11-19-haftarah HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53074 - "OPTIONS /api/chats/daily-2025-11-19-haftarah HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54457 - "OPTIONS /api/sessions/daily-2025-11-19-haftarah HTTP/1.1" 200 OK
+2026-07-13 16:59:50,513 - brain_service.services.session_service - INFO - Retrieved daily session
+INFO:     127.0.0.1:54457 - "GET /api/chats/daily-2025-11-19-haftarah HTTP/1.1" 200 OK
+2026-07-13 16:59:50,513 - brain_service.services.session_service - INFO - Retrieved daily session
+INFO:     127.0.0.1:53074 - "GET /api/sessions/daily-2025-11-19-haftarah HTTP/1.1" 200 OK
+2026-07-13 16:59:50,535 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='daily-2025-11-19-haftarah', ref='Malachi 1:1-2:7', window_size=30
+2026-07-13 16:59:50,535 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=True (from flag: None, from session_id: True)
+2026-07-13 16:59:50,535 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Loading full text for Malachi 1:1-2:7
+2026-07-13 16:59:50,537 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Using original daily ref: Malachi 1:1-2:7
+2026-07-13 16:59:50 - brain_service.services.study_utils - INFO - [daily] GET_FULL_DAILY_TEXT STARTED: ref='Malachi 1:1-2:7'
+2026-07-13 16:59:50,537 - brain_service.services.study_utils - INFO - [daily] GET_FULL_DAILY_TEXT STARTED: ref='Malachi 1:1-2:7'
+2026-07-13 16:59:50 - brain_service.services.study_utils - INFO - [daily] HANDLING INTER-CHAPTER RANGE: Malachi 1:1-2:7
+2026-07-13 16:59:50,541 - brain_service.services.study_utils - INFO - [daily] HANDLING INTER-CHAPTER RANGE: Malachi 1:1-2:7
+2026-07-13 16:59:50 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER PARSED: Malachi->Malachi, 1:1 to 2:7
+2026-07-13 16:59:50,542 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER PARSED: Malachi->Malachi, 1:1 to 2:7
+2026-07-13 16:59:50,543 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:1' using legacy API
+2026-07-13 16:59:51 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:1
+2026-07-13 16:59:51,176 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:1
+2026-07-13 16:59:51,177 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:2' using legacy API
+2026-07-13 16:59:51 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:2
+2026-07-13 16:59:51,443 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:2
+2026-07-13 16:59:51,444 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:3' using legacy API
+2026-07-13 16:59:51 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:3
+2026-07-13 16:59:51,707 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:3
+2026-07-13 16:59:51,709 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:4' using legacy API
+INFO:     127.0.0.1:54457 - "OPTIONS /api/daily/create/daily-2025-11-06-haftarah-a HTTP/1.1" 200 OK
+2026-07-13 16:59:51,791 - brain_service.services.session_service - INFO - Retrieved daily session
+INFO:     127.0.0.1:54457 - "POST /api/daily/create/daily-2025-11-06-haftarah-a HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54457 - "OPTIONS /api/chats/daily-2025-11-06-haftarah-a HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49982 - "OPTIONS /api/sessions/daily-2025-11-06-haftarah-a HTTP/1.1" 200 OK
+2026-07-13 16:59:51,840 - brain_service.services.session_service - INFO - Retrieved daily session
+INFO:     127.0.0.1:49982 - "GET /api/chats/daily-2025-11-06-haftarah-a HTTP/1.1" 200 OK
+2026-07-13 16:59:51,841 - brain_service.services.session_service - INFO - Retrieved daily session
+INFO:     127.0.0.1:54457 - "GET /api/sessions/daily-2025-11-06-haftarah-a HTTP/1.1" 200 OK
+2026-07-13 16:59:51,862 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='daily-2025-11-06-haftarah-a', ref='II Kings 4:1-37', window_size=30
+2026-07-13 16:59:51,863 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=True (from flag: None, from session_id: True)
+2026-07-13 16:59:51,863 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Loading full text for II Kings 4:1-37
+2026-07-13 16:59:51,864 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Using original daily ref: II Kings 4:1-37
+2026-07-13 16:59:51 - brain_service.services.study_utils - INFO - [daily] GET_FULL_DAILY_TEXT STARTED: ref='II Kings 4:1-37'
+2026-07-13 16:59:51,864 - brain_service.services.study_utils - INFO - [daily] GET_FULL_DAILY_TEXT STARTED: ref='II Kings 4:1-37'
+2026-07-13 16:59:51,866 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:1' using legacy API
+2026-07-13 16:59:51 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:4
+2026-07-13 16:59:51,975 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:4
+2026-07-13 16:59:51,976 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:5' using legacy API
+2026-07-13 16:59:52 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:5
+2026-07-13 16:59:52,259 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:5
+2026-07-13 16:59:52,260 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:6' using legacy API
+2026-07-13 16:59:52,519 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:2' using legacy API
+2026-07-13 16:59:52 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:6
+2026-07-13 16:59:52,529 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:6
+2026-07-13 16:59:52,531 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:7' using legacy API
+2026-07-13 16:59:52 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:7
+2026-07-13 16:59:52,797 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:7
+2026-07-13 16:59:52,798 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:3' using legacy API
+2026-07-13 16:59:52,799 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:8' using legacy API
+2026-07-13 16:59:53 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:8
+2026-07-13 16:59:53,069 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:8
+2026-07-13 16:59:53,071 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:4' using legacy API
+2026-07-13 16:59:53,072 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:9' using legacy API
+2026-07-13 16:59:53,344 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:5' using legacy API
+2026-07-13 16:59:53 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:9
+2026-07-13 16:59:53,346 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:9
+2026-07-13 16:59:53,347 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:10' using legacy API
+2026-07-13 16:59:53 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:10
+2026-07-13 16:59:53,616 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:10
+2026-07-13 16:59:53,617 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:11' using legacy API
+2026-07-13 16:59:53,629 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:6' using legacy API
+2026-07-13 16:59:53 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:11
+2026-07-13 16:59:53,882 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:11
+2026-07-13 16:59:53,883 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:12' using legacy API
+2026-07-13 16:59:53,911 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:7' using legacy API
+2026-07-13 16:59:54 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:12
+2026-07-13 16:59:54,185 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:12
+2026-07-13 16:59:54,188 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:13' using legacy API
+2026-07-13 16:59:54,201 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:8' using legacy API
+2026-07-13 16:59:54 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:13
+2026-07-13 16:59:54,463 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:13
+2026-07-13 16:59:54,464 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:14' using legacy API
+2026-07-13 16:59:54,475 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:9' using legacy API
+2026-07-13 16:59:54 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:14
+2026-07-13 16:59:54,730 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 1:14
+2026-07-13 16:59:54,731 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 1:15' using legacy API
+2026-07-13 16:59:54,742 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:10' using legacy API
+2026-07-13 16:59:54,905 - brain_service.services.sefaria_service - WARNING - SEFARIA_SERVICE: Fetch FAILED for Malachi 1:15 after fallback.
+2026-07-13 16:59:54,906 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:1' using legacy API
+2026-07-13 16:59:55,017 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:11' using legacy API
+2026-07-13 16:59:55 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:1
+2026-07-13 16:59:55,177 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:1
+2026-07-13 16:59:55,178 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:2' using legacy API
+2026-07-13 16:59:55,292 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:12' using legacy API
+2026-07-13 16:59:55 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:2
+2026-07-13 16:59:55,447 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:2
+2026-07-13 16:59:55,448 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:3' using legacy API
+2026-07-13 16:59:55,560 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:13' using legacy API
+2026-07-13 16:59:55 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:3
+2026-07-13 16:59:55,715 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:3
+2026-07-13 16:59:55,716 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:4' using legacy API
+2026-07-13 16:59:55,834 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:14' using legacy API
+2026-07-13 16:59:55 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:4
+2026-07-13 16:59:55,983 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:4
+2026-07-13 16:59:55,984 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:5' using legacy API
+2026-07-13 16:59:56,118 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:15' using legacy API
+2026-07-13 16:59:56 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:5
+2026-07-13 16:59:56,256 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:5
+2026-07-13 16:59:56,257 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:6' using legacy API
+2026-07-13 16:59:56,390 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:16' using legacy API
+2026-07-13 16:59:56 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:6
+2026-07-13 16:59:56,524 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:6
+2026-07-13 16:59:56,525 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Malachi 2:7' using legacy API
+2026-07-13 16:59:56,664 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:17' using legacy API
+2026-07-13 16:59:56 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:7
+2026-07-13 16:59:56,794 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER VERSE: Malachi 2:7
+2026-07-13 16:59:56 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER RANGE COMPLETE: loaded 21 segments
+2026-07-13 16:59:56,795 - brain_service.services.study_utils - INFO - [daily] INTER-CHAPTER RANGE COMPLETE: loaded 21 segments
+2026-07-13 16:59:56 - brain_service.services.study_utils - INFO - [daily] SAVED TOTAL SEGMENTS: 21 for session daily-2025-11-19-haftarah
+2026-07-13 16:59:56,796 - brain_service.services.study_utils - INFO - [daily] SAVED TOTAL SEGMENTS: 21 for session daily-2025-11-19-haftarah
+2026-07-13 16:59:56,814 - brain_service.services.study_service - INFO - \U0001f525 SAVED SEGMENTS TO REDIS: 21 segments for session daily-2025-11-19-haftarah
+2026-07-13 16:59:56,815 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Starting background loading for remaining segments
+2026-07-13 16:59:56,815 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE COMPLETE: segments=21
+2026-07-13 16:59:56,815 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=21, ref=Malachi 1:1-2:7
+2026-07-13 16:59:56,816 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Loading chat history
+2026-07-13 16:59:56,817 - brain_service.services.study_service - INFO - Retrieved 0 messages from daily:sess:daily-2025-11-19-haftarah:history_list
+2026-07-13 16:59:56,818 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=daily-2025-11-19-haftarah, segments_count=21
+2026-07-13 16:59:56,864 - brain_service.services.study_state - INFO - Pushed new snapshot for session 'daily-2025-11-19-haftarah' at index 0.
+2026-07-13 16:59:56,864 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=daily-2025-11-19-haftarah, success=True
+INFO:     127.0.0.1:53074 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53074 - "OPTIONS /api/study/talmud/comments?ref=Malachi%201%3A1-2%3A7 HTTP/1.1" 200 OK
+2026-07-13 16:59:56,900 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Malachi 1:1-2:7 (original: Malachi 1:1-2:7)
+2026-07-13 16:59:56,901 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Malachi 1:1-2:7'
+2026-07-13 16:59:56,936 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:18' using legacy API
+2026-07-13 16:59:57,208 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:19' using legacy API
+2026-07-13 16:59:57,486 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:20' using legacy API
+2026-07-13 16:59:57,802 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:21' using legacy API
+INFO:     127.0.0.1:57839 - "OPTIONS /api/daily/daily-2025-11-19-haftarah/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57839 - "GET /api/daily/daily-2025-11-19-haftarah/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57839 - "OPTIONS /api/study/talmud/comments?ref=Malachi%201%3A1 HTTP/1.1" 200 OK
+2026-07-13 16:59:57,897 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Malachi 1:1 (original: Malachi 1:1)
+2026-07-13 16:59:57,898 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Malachi 1:1'
+2026-07-13 16:59:58,104 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:22' using legacy API
+2026-07-13 16:59:58,395 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:23' using legacy API
+2026-07-13 16:59:58,663 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:24' using legacy API
+2026-07-13 16:59:58,932 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:25' using legacy API
+INFO:     127.0.0.1:57839 - "GET /api/study/talmud/comments?ref=Malachi%201%3A1 HTTP/1.1" 200 OK
+2026-07-13 16:59:59,207 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:26' using legacy API
+2026-07-13 16:59:59,502 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:27' using legacy API
+2026-07-13 16:59:59,801 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:28' using legacy API
+2026-07-13 17:00:00,095 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:29' using legacy API
+2026-07-13 17:00:00,406 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:30' using legacy API
+2026-07-13 17:00:00,702 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:31' using legacy API
+2026-07-13 17:00:01,002 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:32' using legacy API
+2026-07-13 17:00:01,275 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:33' using legacy API
+2026-07-13 17:00:01,602 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:34' using legacy API
+2026-07-13 17:00:01,901 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:35' using legacy API
+2026-07-13 17:00:02,178 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:36' using legacy API
+2026-07-13 17:00:02,502 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'II Kings 4:37' using legacy API
+2026-07-13 17:00:02,825 - brain_service.services.study_service - INFO - \U0001f525 SAVED SEGMENTS TO REDIS: 37 segments for session daily-2025-11-06-haftarah-a
+2026-07-13 17:00:02,825 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Starting background loading for remaining segments
+2026-07-13 17:00:02,826 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE COMPLETE: segments=37
+2026-07-13 17:00:02,826 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=37, ref=II Kings 4:1-37
+2026-07-13 17:00:02,826 - brain_service.services.study_service - INFO - \U0001f525 DAILY MODE: Loading chat history
+2026-07-13 17:00:02,827 - brain_service.services.study_service - INFO - Retrieved 0 messages from daily:sess:daily-2025-11-06-haftarah-a:history_list
+2026-07-13 17:00:02,827 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=daily-2025-11-06-haftarah-a, segments_count=37
+2026-07-13 17:00:02,877 - brain_service.services.study_state - INFO - Pushed new snapshot for session 'daily-2025-11-06-haftarah-a' at index 0.
+2026-07-13 17:00:02,877 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=daily-2025-11-06-haftarah-a, success=True
+INFO:     127.0.0.1:54457 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54457 - "OPTIONS /api/study/talmud/comments?ref=II%20Kings%204%3A1-37 HTTP/1.1" 200 OK
+2026-07-13 17:00:02,899 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: II Kings 4:1-37 (original: II Kings 4:1-37)
+2026-07-13 17:00:02,900 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'II Kings 4:1-37'
+INFO:     127.0.0.1:57839 - "OPTIONS /api/daily/daily-2025-11-06-haftarah-a/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57839 - "GET /api/daily/daily-2025-11-06-haftarah-a/segments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57839 - "OPTIONS /api/study/talmud/comments?ref=II%20Kings%204%3A1 HTTP/1.1" 200 OK
+2026-07-13 17:00:04,101 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: II Kings 4:1 (original: II Kings 4:1)
+2026-07-13 17:00:04,102 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'II Kings 4:1'
+INFO:     127.0.0.1:57839 - "GET /api/study/talmud/comments?ref=II%20Kings%204%3A1 HTTP/1.1" 200 OK
+2026-07-13 17:00:08,807 - core.utils - ERROR - Sefaria API request error for https://www.sefaria.org/api/links/II%20Kings%204%3A1-37: peer closed connection without sending complete message body (incomplete chunked read)
+INFO:     127.0.0.1:54457 - "GET /api/study/talmud/comments?ref=II%20Kings%204%3A1-37 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53074 - "GET /api/study/talmud/comments?ref=Malachi%201%3A1-2%3A7 HTTP/1.1" 200 OK
+2026-07-13 17:00:20,407 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='da989589-a541-4011-90ee-3443d669526e', ref='Chullin 74b.1', window_size=30
+2026-07-13 17:00:20,407 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 17:00:20,407 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b.1
+2026-07-13 17:00:20,408 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b.1' via /api/links/
+2026-07-13 17:00:20,409 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b.1' using legacy API
+2026-07-13 17:00:20,958 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:2' using legacy API
+2026-07-13 17:00:21,115 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:3' using legacy API
+2026-07-13 17:00:21,218 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:1:1' using legacy API
+2026-07-13 17:00:21,219 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:1' using legacy API
+2026-07-13 17:00:21,219 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rif Chullin 25a:3' using legacy API
+2026-07-13 17:00:21,220 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:1:2' using legacy API
+2026-07-13 17:00:21,220 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, Forbidden Foods 5:15' using legacy API
+2026-07-13 17:00:21,221 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Sefer HaTerumah, Psakim 41:1' using legacy API
+2026-07-13 17:00:21,221 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 13:3' using legacy API
+2026-07-13 17:00:21,235 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 13' using legacy API
+2026-07-13 17:00:21,235 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Menachot 30b:9' using legacy API
+2026-07-13 17:00:21,236 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishnah Chullin 4:5' using legacy API
+2026-07-13 17:00:21,236 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishpetei Uziel, Volume IV, Choshen Mishpat 46:11' using legacy API
+2026-07-13 17:00:21,236 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Responsa Benei Banim, Volume I 27:4' using legacy API
+2026-07-13 17:00:21,270 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:4' using legacy API
+2026-07-13 17:00:21,424 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:5' using legacy API
+2026-07-13 17:00:21,597 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:17' using legacy API
+2026-07-13 17:00:21,767 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:18' using legacy API
+2026-07-13 17:00:21,874 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=da989589-a541-4011-90ee-3443d669526e, ref=Chullin 74b.1, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:59218 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+2026-07-13 17:00:21,974 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:19' using legacy API
+2026-07-13 17:00:22,175 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:20' using legacy API
+2026-07-13 17:00:22,387 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:21' using legacy API
+2026-07-13 17:00:22,591 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:22' using legacy API
+2026-07-13 17:00:22,794 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:23' using legacy API
+2026-07-13 17:00:22,993 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:24' using legacy API
+2026-07-13 17:00:23,177 - brain_service.services.sefaria_service - WARNING - SEFARIA_SERVICE: Fetch FAILED for Chullin 74b:24 after fallback.
+2026-07-13 17:00:23,178 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:1' using legacy API
+2026-07-13 17:00:23,377 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:2' using legacy API
+2026-07-13 17:00:23,577 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:3' using legacy API
+2026-07-13 17:00:23,771 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:4' using legacy API
+2026-07-13 17:00:23,968 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:5' using legacy API
+2026-07-13 17:00:24,168 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:6' using legacy API
+2026-07-13 17:00:24,372 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:7' using legacy API
+2026-07-13 17:00:24,571 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 75a:8' using legacy API
+INFO:     127.0.0.1:57301 - "OPTIONS /api/study/state?session_id=70d765cd-879f-4a11-9b68-32e6e2879343 HTTP/1.1" 200 OK
+2026-07-13 17:00:58,002 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 17:00:58,002 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:top
+2026-07-13 17:00:58,003 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 17:00:58,004 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 17:00:58,006 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:history_list
+INFO:     127.0.0.1:57301 - "GET /api/study/state?session_id=70d765cd-879f-4a11-9b68-32e6e2879343 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57301 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A2 HTTP/1.1" 200 OK
+2026-07-13 17:00:58,023 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:2)
+2026-07-13 17:00:58,025 - brain_service.services.sefaria_service - INFO - Fetching links with text for 'Chullin 74b'
+INFO:     127.0.0.1:57301 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A2 HTTP/1.1" 200 OK
+2026-07-13 17:00:59,655 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='70d765cd-879f-4a11-9b68-32e6e2879343', ref='Chullin 74b:7', window_size=5
+2026-07-13 17:00:59,655 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 17:00:59,656 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:7
+2026-07-13 17:00:59,656 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:7' via /api/links/
+INFO:     127.0.0.1:61736 - "OPTIONS /api/study/talmud/comments?ref=Chullin%2074b%3A7 HTTP/1.1" 200 OK
+2026-07-13 17:00:59,658 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:7' using legacy API
+2026-07-13 17:00:59,660 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:7)
+INFO:     127.0.0.1:61736 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A7 HTTP/1.1" 200 OK
+2026-07-13 17:01:00,002 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:7:1' using legacy API
+2026-07-13 17:01:00,003 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rashi on Chullin 74b:7:2' using legacy API
+2026-07-13 17:01:00,003 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 74b:7' using legacy API
+2026-07-13 17:01:00,004 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Rabbeinu Gershom on Chullin 74b:8' using legacy API
+2026-07-13 17:01:00,004 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:7' using legacy API
+2026-07-13 17:01:00,004 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Halakhot Gedolot 66:5' using legacy API
+2026-07-13 17:01:00,176 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:6' using legacy API
+2026-07-13 17:01:00,176 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:8' using legacy API
+2026-07-13 17:01:00,333 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:9' using legacy API
+2026-07-13 17:01:00,490 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:10' using legacy API
+2026-07-13 17:01:00,646 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:11' using legacy API
+2026-07-13 17:01:00,803 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:12' using legacy API
+2026-07-13 17:01:00,959 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE COMPLETE: window_data=True, bookshelf_data=True
+2026-07-13 17:01:00,960 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT_DATA CREATED: segments=11, ref=Chullin 74b:7
+2026-07-13 17:01:00,960 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading existing snapshot
+2026-07-13 17:01:00,960 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT START: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 17:01:00,960 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT KEY: study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:top
+2026-07-13 17:01:00,960 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT RESULT: True
+2026-07-13 17:01:00,960 - brain_service.services.study_state - INFO - \U0001f525 GET_CURRENT_SNAPSHOT SUCCESS: Found snapshot
+2026-07-13 17:01:00,961 - brain_service.services.study_service - INFO - \U0001f525 LOADING CHAT HISTORY: session_id=70d765cd-879f-4a11-9b68-32e6e2879343
+2026-07-13 17:01:00,962 - brain_service.services.study_service - INFO - Retrieved 0 messages from study:sess:70d765cd-879f-4a11-9b68-32e6e2879343:history_list
+2026-07-13 17:01:00,962 - brain_service.services.study_service - INFO - \U0001f525 CHAT HISTORY LOADED: 0 messages
+2026-07-13 17:01:00,962 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT CREATED: session_id=70d765cd-879f-4a11-9b68-32e6e2879343, segments_count=11
+2026-07-13 17:01:00,964 - brain_service.services.study_state - INFO - Replaced snapshot for session '70d765cd-879f-4a11-9b68-32e6e2879343' at index 0.
+2026-07-13 17:01:00,964 - brain_service.services.study_service - INFO - \U0001f525 SNAPSHOT SAVED: session_id=70d765cd-879f-4a11-9b68-32e6e2879343, success=True
+INFO:     127.0.0.1:57301 - "POST /api/study/set_focus HTTP/1.1" 200 OK
+2026-07-13 17:01:02,625 - brain_service.services.study_service - INFO - \U0001f525 SET_FOCUS REQUEST: session_id='70d765cd-879f-4a11-9b68-32e6e2879343', ref='Chullin 74b:12', window_size=5
+2026-07-13 17:01:02,625 - brain_service.services.study_service - INFO - \U0001f525 SESSION TYPE CHECK: is_daily_session=False (from flag: None, from session_id: False)
+2026-07-13 17:01:02,625 - brain_service.services.study_service - INFO - \U0001f525 STUDY MODE: Loading windowed text for Chullin 74b:12
+2026-07-13 17:01:02,626 - brain_service.services.sefaria_service - INFO - Fetching related links for 'Chullin 74b:12' via /api/links/
+2026-07-13 17:01:02,629 - brain_service.services.study_service - INFO - Fetching Talmud comments for daf: Chullin 74b (original: Chullin 74b:12)
+2026-07-13 17:01:02,630 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:13' using legacy API
+INFO:     127.0.0.1:61736 - "GET /api/study/talmud/comments?ref=Chullin%2074b%3A12 HTTP/1.1" 200 OK
+2026-07-13 17:01:02,791 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:14' using legacy API
+2026-07-13 17:01:02,949 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:15' using legacy API
+2026-07-13 17:01:02,974 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Steinsaltz on Chullin 74b:12' using legacy API
+2026-07-13 17:01:02,974 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chidushei Chatam Sofer on Chullin 74b:2' using legacy API
+2026-07-13 17:01:02,975 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Mishneh Torah, First Fruits and other Gifts to Priests Outside the Sanctuary 12:9' using legacy API
+2026-07-13 17:01:02,976 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Shulchan Arukh, Yoreh De'ah 321:4' using legacy API
+2026-07-13 17:01:02,976 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Tur, Yoreh De'ah 321' using legacy API
+2026-07-13 17:01:03,106 - brain_service.services.sefaria_service - INFO - SEFARIA_SERVICE: Fetching 'Chullin 74b:16' using legacy API
+2026-07-13 17:01:03,271 - brain_service.services.study_service - ERROR - \U0001f525 EXCEPTION IN SET_FOCUS: session_id=70d765cd-879f-4a11-9b68-32e6e2879343, ref=Chullin 74b:12, error='list' object has no attribute 'strip'
+Traceback (most recent call last):
+  File "D:\AI\astra\brain_service\services\study_service.py", line 400, in set_focus
+    window_data, bookshelf_data = await asyncio.gather(window_task, bookshelf_task)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\AI\astra\brain_service\services\study_utils.py", line 2551, in get_bookshelf_for
+    snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
+                 ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'strip'
+INFO:     127.0.0.1:57301 - "POST /api/study/set_focus HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54522 - "OPTIONS /api/xp/profile HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63874 - "GET /api/xp/profile HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50813 - "POST /api/auth/refresh HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53924 - "POST /api/auth/refresh HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53924 - "POST /api/auth/refresh HTTP/1.1" 401 Unauthorized

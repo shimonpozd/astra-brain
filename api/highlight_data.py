@@ -4,7 +4,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from core.dependencies import get_profile_service, get_talmudic_concept_service
+from core.dependencies import get_profile_service, get_talmudic_concept_service, require_admin_user
+from brain_service.models.db import User
 from brain_service.services.profile_service import ProfileService
 from brain_service.services.talmudic_concept_service import TalmudicConceptService
 from brain_service.utils.text_processing import generate_vowel_insensitive_regex, strip_niqqud
@@ -39,6 +40,23 @@ class ConceptHighlight(BaseModel):
     term_he: Optional[str] = None
     search_patterns: List[str]
     short_summary_html: Optional[str] = None
+
+
+class SageMappingPayload(BaseModel):
+    sage_slug: str
+    raw_text: str
+
+
+class ConceptMappingPayload(BaseModel):
+    concept_slug: str
+    raw_text: str
+
+
+class CustomConceptPayload(BaseModel):
+    term_he: str
+    pattern: str
+    short_summary_html: Optional[str] = None
+    slug: Optional[str] = None
 
 
 @router.get("/highlight/sages", response_model=dict)
@@ -96,10 +114,25 @@ async def highlight_sages(profile_service: ProfileService = Depends(get_profile_
         period_ru = display.get("period_ru") or author_facts.get("period_ru")
         region_val = author_facts.get("region")
         lifespan_val = author_facts.get("lifespan") or item.get("lifespan")
-        normalized = strip_niqqud(name_he or slug)
-        pattern = generate_vowel_insensitive_regex(normalized)
-        if not pattern:
+        
+        patterns_list: list[str] = []
+        base_norm = strip_niqqud(name_he or slug)
+        base_pat = generate_vowel_insensitive_regex(base_norm)
+        if base_pat:
+            patterns_list.append(base_pat)
+            
+        aliases = display.get("aliases") or []
+        if isinstance(aliases, list):
+            for alias in aliases:
+                if isinstance(alias, str) and alias.strip():
+                    alias_pat = generate_vowel_insensitive_regex(strip_niqqud(alias.strip()))
+                    if alias_pat and alias_pat not in patterns_list:
+                        patterns_list.append(alias_pat)
+                        
+        if not patterns_list:
             continue
+            
+        pattern = "|".join(patterns_list)
 
         highlights.append(
             SageHighlight(
@@ -147,6 +180,118 @@ async def highlight_concepts(
     return {"items": [i.model_dump() for i in items]}
 
 
+@router.post("/highlight/sages/mapping")
+async def add_sage_mapping(
+    payload: SageMappingPayload,
+    profile_service: ProfileService = Depends(get_profile_service),
+    admin: User = Depends(require_admin_user),
+):
+    """
+    Save a raw text alias/pattern mapping for a sage profile.
+    """
+    profile_res = await profile_service.get_profile(payload.sage_slug.strip())
+    if not profile_res or not profile_res.get("ok"):
+        raise HTTPException(status_code=404, detail="Sage profile not found")
+
+    profile_data = profile_res.get("profile") or {}
+    facts = profile_data.get("facts") or {}
+    if not isinstance(facts, dict):
+        facts = {}
+    author_facts = facts.get("author") if isinstance(facts, dict) else {}
+    if not isinstance(author_facts, dict):
+        author_facts = {}
+    display = author_facts.get("display") if isinstance(author_facts, dict) else {}
+    if not isinstance(display, dict):
+        display = {}
+
+    aliases = display.get("aliases") or []
+    if not isinstance(aliases, list):
+        aliases = []
+
+    raw_clean = strip_niqqud(payload.raw_text.strip())
+    if raw_clean and raw_clean not in aliases:
+        aliases.append(raw_clean)
+        display["aliases"] = aliases
+        author_facts["display"] = display
+        facts["author"] = author_facts
+        await profile_service.save_manual_profile(
+            slug=payload.sage_slug.strip(),
+            summary_html=profile_data.get("summary_html"),
+            facts=facts,
+            verified_by=admin.username,
+        )
+    return {"ok": True, "sage_slug": payload.sage_slug, "alias": raw_clean}
+
+
+@router.post("/highlight/concepts/mapping")
+async def add_concept_mapping(
+    payload: ConceptMappingPayload,
+    concept_service: TalmudicConceptService = Depends(get_talmudic_concept_service),
+    admin: User = Depends(require_admin_user),
+):
+    """
+    Save a raw text pattern mapping for an existing concept.
+    """
+    concept = await concept_service.get(payload.concept_slug.strip())
+    if not concept:
+        raise HTTPException(status_code=404, detail="Concept not found")
+
+    patterns = concept.get("search_patterns") or []
+    new_pat = payload.raw_text.strip()
+    if new_pat and new_pat not in patterns:
+        patterns.append(new_pat)
+        res = await concept_service.upsert(
+            slug=concept["slug"],
+            term_he=concept["term_he"],
+            search_patterns=patterns,
+            short_summary_html=concept.get("short_summary_html"),
+            status=concept.get("status") or "published",
+        )
+        return {"ok": True, "concept": res}
+    return {"ok": True, "concept": concept}
+
+
+@router.post("/highlight/concepts/custom")
+async def add_custom_concept(
+    payload: CustomConceptPayload,
+    concept_service: TalmudicConceptService = Depends(get_talmudic_concept_service),
+    admin: User = Depends(require_admin_user),
+):
+    """
+    Add or update a custom Talmudic concept pattern for dynamic highlighting with optional description.
+    """
+    import re
+    if payload.slug:
+        slug = payload.slug.strip()
+        existing = await concept_service.get(slug)
+        patterns = (existing.get("search_patterns") or []) if existing else []
+        if payload.pattern.strip() and payload.pattern.strip() not in patterns:
+            patterns.append(payload.pattern.strip())
+        summary = payload.short_summary_html if payload.short_summary_html is not None else (existing.get("short_summary_html") if existing else None)
+        res = await concept_service.upsert(
+            slug=slug,
+            term_he=payload.term_he.strip(),
+            search_patterns=patterns,
+            short_summary_html=summary,
+            status="published",
+        )
+    else:
+        clean_term = re.sub(r'[\s]+', '-', payload.term_he.strip())
+        slug = f"custom-{clean_term}"
+        existing = await concept_service.get(slug)
+        patterns = (existing.get("search_patterns") or []) if existing else []
+        if payload.pattern.strip() and payload.pattern.strip() not in patterns:
+            patterns.append(payload.pattern.strip())
+        res = await concept_service.upsert(
+            slug=slug,
+            term_he=payload.term_he.strip(),
+            search_patterns=patterns,
+            short_summary_html=payload.short_summary_html,
+            status="published",
+        )
+    return {"ok": True, "concept": res}
+
+
 # Backward-compatible singular alias
 @router.get("/highlight/sage", response_model=dict)
 async def highlight_sage_alias(profile_service: ProfileService = Depends(get_profile_service)):
@@ -158,3 +303,4 @@ async def highlight_concept_alias(
     concept_service: TalmudicConceptService = Depends(get_talmudic_concept_service),
 ):
     return await highlight_concepts(concept_service)
+
