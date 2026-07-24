@@ -10,7 +10,9 @@ class StudyBookshelfRequest(BaseModel):
     categories: Optional[List[str]] = None
 
 class StudyResolveRequest(BaseModel):
-    text: str
+    text: Optional[str] = None
+    query: Optional[str] = None
+    book_name: Optional[str] = None
 
 class StudySetFocusRequest(BaseModel):
     session_id: str

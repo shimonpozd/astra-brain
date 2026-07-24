@@ -30,6 +30,114 @@ from .study_utils import get_text_with_window, get_bookshelf_for
 
 logger = logging.getLogger(__name__)
 
+_RU_BOOK_ALIASES: Dict[str, str] = {
+    "брахот": "Berakhot",
+    "шабат": "Shabbat",
+    "шаббат": "Shabbat",
+    "эрувин": "Eruvin",
+    "псахим": "Pesachim",
+    "шкалим": "Shekalim",
+    "йома": "Yoma",
+    "сука": "Sukkah",
+    "сукка": "Sukkah",
+    "бейца": "Beitzah",
+    "рош ашана": "Rosh Hashanah",
+    "рош а-шана": "Rosh Hashanah",
+    "рош хашана": "Rosh Hashanah",
+    "таанит": "Taanit",
+    "мегила": "Megillah",
+    "мегилла": "Megillah",
+    "моэд катан": "Moed Katan",
+    "хагига": "Chagigah",
+    "йевамот": "Yevamot",
+    "ктубот": "Ketubot",
+    "недарим": "Nedarim",
+    "назир": "Nazir",
+    "сота": "Sotah",
+    "гитин": "Gittin",
+    "кидушин": "Kiddushin",
+    "бава кама": "Bava Kamma",
+    "бава мециа": "Bava Metzia",
+    "бава меция": "Bava Metzia",
+    "бава батра": "Bava Batra",
+    "санедрин": "Sanhedrin",
+    "санхедрин": "Sanhedrin",
+    "макот": "Makkot",
+    "швуот": "Shevuot",
+    "авода зара": "Avodah Zarah",
+    "орайот": "Horayot",
+    "звахим": "Zevachim",
+    "менахот": "Menachot",
+    "хулин": "Chullin",
+    "хуллин": "Chullin",
+    "бхорот": "Bekhorot",
+    "бехорот": "Bekhorot",
+    "арахин": "Arakhin",
+    "тмура": "Temurah",
+    "критот": "Keritot",
+    "критат": "Keritot",
+    "меила": "Meilah",
+    "киним": "Kinnim",
+    "тамид": "Tamid",
+    "мидот": "Middot",
+    "нида": "Niddah",
+    "берешит": "Genesis",
+    "бытие": "Genesis",
+    "шемот": "Exodus",
+    "исход": "Exodus",
+    "ваикра": "Leviticus",
+    "левит": "Leviticus",
+    "бемидбар": "Numbers",
+    "числа": "Numbers",
+    "дварим": "Deuteronomy",
+    "второзаконие": "Deuteronomy",
+    "тегилим": "Psalms",
+    "псалмы": "Psalms",
+    "мишлей": "Proverbs",
+    "притчи": "Proverbs",
+    "иов": "Job",
+    "ийов": "Job",
+    "даниэль": "Daniel",
+    "эсфирь": "Esther",
+    "эстер": "Esther",
+}
+
+def normalize_russian_ref(ref: str, index_service: Optional[Any] = None) -> str:
+    if not ref or not isinstance(ref, str):
+        return ref
+
+    text = unquote(ref).replace("_", " ").strip()
+
+    # Replace Cyrillic daf amud suffixes: 84а -> 84a, 84б -> 84b
+    text = re.sub(r'(\d+)\s*а\b', r'\1a', text, flags=re.IGNORECASE)
+    text = re.sub(r'(\d+)\s*б\b', r'\1b', text, flags=re.IGNORECASE)
+
+    # Match book part vs numeric/page tail part
+    m = re.match(r"^([^\d]+?)\s*(\d[^\s]*.*)$", text)
+    if m:
+        book_part = m.group(1).strip()
+        tail_part = m.group(2).strip()
+
+        norm_book = book_part.lower()
+        if norm_book in _RU_BOOK_ALIASES:
+            canonical_book = _RU_BOOK_ALIASES[norm_book]
+            return f"{canonical_book} {tail_part}"
+
+        if index_service and hasattr(index_service, "resolve_book_name"):
+            resolved = index_service.resolve_book_name(book_part)
+            if resolved:
+                return f"{resolved} {tail_part}"
+    else:
+        norm_book = text.lower()
+        if norm_book in _RU_BOOK_ALIASES:
+            return _RU_BOOK_ALIASES[norm_book]
+        if index_service and hasattr(index_service, "resolve_book_name"):
+            resolved = index_service.resolve_book_name(text)
+            if resolved:
+                return resolved
+
+    return text
+
 class StudyService:
     """
     Service for handling study functionality including state management,
@@ -663,13 +771,16 @@ class StudyService:
             return {"ok": False, "error": str(e)}
     
     async def resolve_reference(self, request: StudyResolveRequest) -> Dict[str, Any]:
-        """Resolve a book name to a reference."""
+        """Resolve a book or reference string to a canonical Sefaria reference."""
         try:
-            # Use the SefariaIndexService method instead
-            resolved_ref = self.sefaria_index_service.resolve_book_name(request.book_name)
+            raw_input = request.text or request.query or request.book_name or ""
+            if not raw_input.strip():
+                return {"ok": False, "error": "Empty reference query"}
+            
+            resolved_ref = normalize_russian_ref(raw_input, self.sefaria_index_service)
             return {"ok": True, "ref": resolved_ref}
         except Exception as e:
-            logger.error(f"Failed to resolve book name {request.book_name}: {e}", exc_info=True)
+            logger.error(f"Failed to resolve reference query '{request}': {e}", exc_info=True)
             return {"ok": False, "error": str(e)}
     
     async def set_chat_focus(self, request: StudyChatSetFocusRequest, user_id: str) -> StudyStateResponse:
@@ -1085,17 +1196,13 @@ You can see what texts are currently open in the study interface. You have acces
     def _coerce_ref_slug(self, ref: Optional[str]) -> Optional[str]:
         """
         Convert Sefaria-style URL refs (with underscores, percent-encoding and dot-separated segments)
-        into canonical text refs understood by the API.
+        and Russian/Cyrillic refs into canonical text refs understood by the API.
         """
         if not ref or not isinstance(ref, str):
             return ref
 
         decoded = unquote(ref)
-        candidate = decoded
-
-        # Detect already-normal refs (contain spaces and colons or the word " on ")
-        if (" on " in candidate and ":" in candidate) or " " in candidate:
-            return candidate.strip()
+        candidate = decoded.strip()
 
         # Replace underscores with spaces (Sefaria slug format)
         candidate = candidate.replace("_", " ")
@@ -1110,6 +1217,11 @@ You can see what texts are currently open in the study interface. You have acces
             if head and tail:
                 candidate = f"{head} {tail}"
 
+        # If dot is used instead of space (e.g., "Chullin.84a" or "Berakhot.2a")
+        if "." in candidate and " " not in candidate:
+            candidate = candidate.replace(".", " ")
+
+        candidate = normalize_russian_ref(candidate, self.sefaria_index_service)
         return candidate.strip()
 
     async def _stream_llm_response(

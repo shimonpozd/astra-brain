@@ -19,11 +19,15 @@ class FrontSegment:
     meta: Dict[str, Any]
 
 
-def clean_html(text: str) -> str:
+def clean_html(text: Any) -> str:
     """Normalize whitespace and drop HTML tags."""
 
     if not text:
-        return text
+        return ""
+    if isinstance(text, list):
+        text = " ".join([clean_html(item) for item in text if item])
+    elif not isinstance(text, str):
+        text = str(text)
     text = html.unescape(text)
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -34,7 +38,7 @@ def extract_hebrew_only(text: Any) -> str:
     """Extract Hebrew text from Sefaria responses (lists or strings)."""
 
     if isinstance(text, list) and text:
-        return text[0]
+        return " ".join([clean_html(x) for x in text if x])
     if isinstance(text, str):
         return text
     return ""

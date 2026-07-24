@@ -736,7 +736,11 @@ async def get_text_with_window(ref: str, sefaria_service: SefariaService, index_
     total_segments = len(all_segments_data)
     for i, seg_data in enumerate(all_segments_data):
         raw_he = getattr(seg_data, "he_text", "") or seg_data.get("he_text") or seg_data.get("he") or ""
+        if isinstance(raw_he, list):
+            raw_he = " ".join([str(x) for x in raw_he if x])
         raw_en = getattr(seg_data, "en_text", "") or seg_data.get("en_text") or seg_data.get("text") or ""
+        if isinstance(raw_en, list):
+            raw_en = " ".join([str(x) for x in raw_en if x])
         
         formatted_segments.append({
             "ref": seg_data.get("ref"),
@@ -2535,21 +2539,31 @@ async def get_bookshelf_for(ref: str, sefaria_service: SefariaService, index_ser
             res = await sefaria_service.get_text(item_ref)
             if res.get("ok") and res.get("data"):
                 data = res["data"]
-                en_text = getattr(data, "en_text", "") or data.get("en_text", "") or ""
-                he_text = getattr(data, "he_text", "") or data.get("he_text", "") or ""
-                return (en_text, he_text)
+                en_text = getattr(data, "en_text", "") or data.get("en_text", "") or data.get("text", "") or ""
+                he_text = getattr(data, "he_text", "") or data.get("he_text", "") or data.get("he", "") or ""
+                if isinstance(en_text, list):
+                    en_text = " ".join([str(x) for x in en_text if x])
+                if isinstance(he_text, list):
+                    he_text = " ".join([str(x) for x in he_text if x])
+                return (str(en_text or ""), str(he_text or ""))
             return ("", "")
         preview_tasks.append(fetch_full_text(item["ref"]))
 
     full_texts = await asyncio.gather(*preview_tasks)
     for i, item in enumerate(sorted_items[:20]):
         en_text, he_text = full_texts[i]
-        item["text_full"] = en_text
-        item["heTextFull"] = he_text
-        item["sourceHasEn"] = bool(en_text and en_text.strip())
+        if isinstance(en_text, list):
+            en_text = " ".join([str(x) for x in en_text if x])
+        if isinstance(he_text, list):
+            he_text = " ".join([str(x) for x in he_text if x])
+        en_text_str = str(en_text or "")
+        he_text_str = str(he_text or "")
+        item["text_full"] = en_text_str
+        item["heTextFull"] = he_text_str
+        item["sourceHasEn"] = bool(en_text_str and en_text_str.strip())
         # For backward compatibility, populate preview with a snippet (prefer Hebrew)
-        snippet_he = (he_text or "").strip()[:PREVIEW_MAX_LEN]
-        snippet_en = (en_text or "").strip()[:PREVIEW_MAX_LEN]
+        snippet_he = he_text_str.strip()[:PREVIEW_MAX_LEN]
+        snippet_en = en_text_str.strip()[:PREVIEW_MAX_LEN]
         item["preview"] = snippet_he or snippet_en
         if snippet_he and snippet_en:
             item["text"] = {"he": snippet_he, "en": snippet_en}
