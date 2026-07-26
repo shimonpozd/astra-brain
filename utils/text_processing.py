@@ -44,7 +44,7 @@ def generate_vowel_insensitive_regex(name_he: str) -> str:
         return ""
 
     base = terms[0]
-    prefix = f"(?:[{PREFIX_CHARS}][{NIQQUD_RANGE}]*['\"׳״]?\\s*)?"
+    prefix = f"(?:[{PREFIX_CHARS}][{NIQQUD_RANGE}]*['\"׳״]?)?"
     # allow niqqud, whitespace, and mild separators inside the name, but avoid trailing punctuation capture
     between = f"[{NIQQUD_RANGE}\\s\\u00A0\\-–—·]*"
     letters: list[str] = []

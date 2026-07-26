@@ -326,14 +326,8 @@ class TranslationService:
     
     def _extract_translation(self, llm_response: str) -> str:
         """
-        Extract translation text from LLM response - simplified version.
-        Just return the text as-is, with basic cleanup.
-        
-        Args:
-            llm_response: Raw LLM response
-            
-        Returns:
-            Cleaned translation text
+        Extract clean translation text from LLM response.
+        Strips out intro text, debug information, and translator comments.
         """
         if not llm_response or not llm_response.strip():
             return ""
@@ -342,15 +336,26 @@ class TranslationService:
         
         # Remove markdown code fences if present
         if txt.startswith("```"):
-            txt = re.sub(r"^```(?:json)?\s*|\s*```$", "", txt, flags=re.DOTALL)
-            txt = txt.strip()
-        
-        # Remove quotes if the entire response is wrapped in quotes
-        if (txt.startswith('"') and txt.endswith('"')) or (txt.startswith("'") and txt.endswith("'")):
-            txt = txt[1:-1]
-        
-        # Basic cleanup
-        txt = txt.strip()
+            txt = re.sub(r"^```(?:json|markdown)?\s*|\s*```$", "", txt, flags=re.DOTALL).strip()
+
+        # Remove trailing debug information or translator notes
+        cutoff_patterns = [
+            r"\n\s*\*\*\*\s*\n",
+            r"\n\s*\*\*Отладочная информация:\*\*",
+            r"\n\s*\*\*Комментарий переводчика:\*\*",
+            r"\n\s*---+\s*\n"
+        ]
+        for pattern in cutoff_patterns:
+            split_parts = re.split(pattern, txt, flags=re.IGNORECASE)
+            if len(split_parts) > 1:
+                txt = split_parts[0].strip()
+
+        # Remove introductory phrases like "Вот перевод...", "**Перевод:**"
+        txt = re.sub(r"^(?:Вот\s+перевод[^\n]*:?\s*|\*\*Перевод:\*\*\s*|Перевод:\s*)", "", txt, flags=re.IGNORECASE).strip()
+
+        # Remove outer quotes if wrapped
+        if (txt.startswith('"') and txt.endswith('"')) or (txt.startswith("'") and txt.endswith("'")) or (txt.startswith('«') and txt.endswith('»')):
+            txt = txt[1:-1].strip()
         
         return txt
     
