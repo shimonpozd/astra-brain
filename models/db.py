@@ -490,3 +490,13 @@ class SederMapLayout(Base, TimestampMixin):
     is_canonical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     owner_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     layout_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+
+class SugyaMapCache(Base, TimestampMixin):
+    __tablename__ = "sugya_map_cache"
+
+    ref: Mapped[str] = mapped_column(String(128), primary_key=True, index=True)
+    sugya_title: Mapped[str] = mapped_column(String(512), nullable=False)
+    mishnah_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    markdown_tree: Mapped[str] = mapped_column(Text, nullable=False)
+    nodes: Mapped[dict] = mapped_column(JSONB, nullable=False)

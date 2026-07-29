@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import logging
 from typing import Any, Dict, List, Optional
@@ -7,9 +8,47 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from core.llm_config import LLMConfigError, get_llm_for_task
+try:
+    from core.database import async_session_factory
+    from models.db import SugyaMapCache
+    from sqlalchemy import select
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+except Exception as _import_err:
+    async_session_factory = None
+    SugyaMapCache = None
+    select = None
+    pg_insert = None
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+CACHE_FILE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "sugya_maps_cache.json")
+
+
+def _load_disk_cache() -> Dict[str, Dict[str, Any]]:
+    """Loads cached sugya maps from disk JSON file."""
+    try:
+        if os.path.exists(CACHE_FILE_PATH):
+            with open(CACHE_FILE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                logger.info(f"Loaded {len(data)} cached sugya maps from disk.")
+                return data
+    except Exception as err:
+        logger.warning(f"Failed to load sugya maps disk cache: {err}")
+    return {}
+
+
+def _save_disk_cache():
+    """Saves SUGYA_MAP_CACHE dictionary to disk JSON file."""
+    try:
+        os.makedirs(os.path.dirname(CACHE_FILE_PATH), exist_ok=True)
+        with open(CACHE_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(SUGYA_MAP_CACHE, f, ensure_ascii=False, indent=2)
+    except Exception as err:
+        logger.warning(f"Failed to save sugya maps disk cache: {err}")
+
+
+SUGYA_MAP_CACHE: Dict[str, Dict[str, Any]] = _load_disk_cache()
 
 SYSTEM_PROMPT = """You are an expert Talmudic logic analyst. Analyze the provided Gemara sugya sequence (Hebrew and English) representing the complete Talmudic sugya topic.
 Deconstruct the logical hierarchy into a Markdown tree using headers (# H1, ## H2, ### H3, #### H4, ##### H5, ###### H6).
@@ -23,22 +62,29 @@ For EACH node in the hierarchy, assign exactly ONE of the following logical type
 - Proof (Ra'aya, proof from scripture or Tannaitic source)
 - Answer (Response to a simple question)
 
-LANGUAGE REQUIREMENT:
-Provide "sugya_title", "mishnah_summary", and node "title" in Russian (Русский язык) so that the titles and explanations are rendered in Russian for the user.
-The start_anchor and end_anchor MUST remain exact Hebrew/Aramaic substrings from the original Hebrew text.
+LANGUAGE & DETAIL REQUIREMENTS (КРИТИЧЕСКИ ВАЖНО):
+1. Provide "sugya_title", "mishnah_summary", and node "title" in Russian (Русский язык).
+2. NO GENERIC TITLES: Never use vague titles like "Спор о жертвах", "Вопрос о глухонемом", or "Мнение Рабби Йоханана".
+3. EXPLICIT SAGE OPINIONS & REASONING REQUIRED: In every title and in "mishnah_summary", you MUST explicitly state:
+   - WHO holds which position (name of the Sage / Tanna / Amora).
+   - WHAT their specific opinion or ruling is.
+   - WHY (their reasoning, proof, or textual source).
+   Good Example: "Рабби Хизкия считает, что запрет покрывать кровь действует даже на несъедобные жертвы, а Рабби Йоханан возражает, что несъедобное не считается едой."
+   Bad Example: "Спор о применимости запрета к несъедобным жертвам."
+4. The start_anchor and end_anchor MUST remain exact Hebrew/Aramaic substrings from the original Hebrew text.
 
 OUTPUT FORMAT REQUIREMENTS:
 Return valid JSON matching this schema:
 {
-  "sugya_title": "Короткий заголовок темы сугии на русском языке",
-  "mishnah_summary": "Краткий перевод/резюме Мишны на русском языке, к которой относится эта сугья (что говорит исходная Мишна)",
+  "sugya_title": "Короткий заголовок темы сугии на русском языке с указанием сути предмета спора",
+  "mishnah_summary": "Детальное резюме/перевод исходной Мишны на русском языке с указанием мнений каждого Танная (например, 'Рабби Меир говорит X, а Мудрецы говорят Y')",
   "markdown_tree": "Markdown string formatted with H1-H6 headers",
   "nodes": [
     {
       "id": "node_1",
       "level": 1,
       "type": "Statement" | "Question" | "Attack" | "Defense" | "Proof" | "Answer",
-      "title": "Краткое описание логического шага на русском языке",
+      "title": "Детальное описание логического шага на русском языке (КТО считает ЧТО и ПОЧЕМУ)",
       "ref": "Sefaria segment reference (e.g. Chullin 89b:10)",
       "start_anchor": "Exact first 2-4 Hebrew words of this block",
       "end_anchor": "Exact last 2-4 Hebrew words of this block"
@@ -47,6 +93,72 @@ Return valid JSON matching this schema:
 }
 
 CRITICAL: The start_anchor and end_anchor MUST be exact substrings from the Hebrew text. Ensure all string values inside JSON are properly escaped (do NOT put raw unescaped double quotes inside titles or sugya_title). Do NOT include trailing commas."""
+
+
+def _extract_governing_mishnah(segments: List[Dict[str, Any]], focus_ref: Optional[str] = None) -> Optional[Dict[str, str]]:
+    """
+    Scans segments to extract the full multi-segment Mishnah.
+    Starts at segment containing 'MISHNAH' / 'Mishna' in English text.
+    Collects all consecutive segments until 'GEMARA' / 'Gemara:' is reached.
+    """
+    if not segments:
+        return None
+
+    # 1. Find focus index
+    focus_idx = 0
+    if focus_ref:
+        for idx, seg in enumerate(segments):
+            if seg.get("ref") == focus_ref:
+                focus_idx = idx
+                break
+
+    # 2. Find starting Mishnah segment (scan backward from focus_idx)
+    mishnah_start_idx = -1
+    for i in range(focus_idx, -1, -1):
+        en_text = (segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or "").strip()
+        if re.search(r"\bMISHNAH\b|\bMishna\b", en_text, re.IGNORECASE):
+            mishnah_start_idx = i
+            break
+
+    # Fallback scan from beginning if not found backward
+    if mishnah_start_idx == -1:
+        for i in range(len(segments)):
+            en_text = (segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or "").strip()
+            if re.search(r"\bMISHNAH\b|\bMishna\b", en_text, re.IGNORECASE):
+                mishnah_start_idx = i
+                break
+
+    if mishnah_start_idx == -1:
+        return None
+
+    he_parts = []
+    en_parts = []
+
+    for i in range(mishnah_start_idx, len(segments)):
+        seg = segments[i]
+        en_text = (seg.get("en_text") or seg.get("enText") or seg.get("text") or "").strip()
+        he_text = (seg.get("he_text") or seg.get("heText") or "").strip()
+
+        # Stop if we hit GEMARA on subsequent segment
+        if i > mishnah_start_idx and re.search(r"\bGEMARA\b|\bGemara\b", en_text, re.IGNORECASE):
+            break
+
+        if he_text:
+            he_parts.append(he_text)
+        if en_text:
+            en_parts.append(en_text)
+
+        # Stop if GEMARA is explicitly inside the current segment text
+        if re.search(r"\bGEMARA\b|\bGemara\b", en_text, re.IGNORECASE) and i > mishnah_start_idx:
+            break
+
+    if not he_parts and not en_parts:
+        return None
+
+    return {
+        "he_text": " ".join(he_parts),
+        "en_text": " ".join(en_parts),
+    }
 
 
 def _clean_and_parse_json(cleaned: str) -> Dict[str, Any]:
@@ -304,6 +416,20 @@ async def _build_user_prompt(ref: Optional[str], segments: Optional[List[Dict[st
         parts.append(f"SUGYA FOCUS REFERENCE: {ref}")
 
     full_context_segments = await _ensure_full_cross_page_context(ref, segments or [])
+
+    # Extract multi-segment Mishnah from 'MISHNAH' up to 'GEMARA'
+    mishnah_data = _extract_governing_mishnah(full_context_segments, focus_ref=ref)
+    if mishnah_data:
+        parts.append("==================================================")
+        parts.append("GOVERNING MISHNAH FOR THIS SUGYA (FULL MULTI-SEGMENT MISHNAH FROM 'MISHNAH' UNTIL 'GEMARA'):")
+        if mishnah_data.get("he_text"):
+            parts.append(f"Hebrew Mishnah Text:\n{mishnah_data['he_text']}")
+        if mishnah_data.get("en_text"):
+            parts.append(f"English Mishnah Text:\n{mishnah_data['en_text']}")
+        parts.append("==================================================")
+        parts.append("INSTRUCTION FOR 'mishnah_summary': Synthesize a detailed, explicit summary of this governing Mishnah in Russian. You MUST explicitly state WHICH Sage/Tanna holds WHICH opinion (e.g., 'Рабби Меир считает X, а Мудрецы считают Y').")
+        parts.append("")
+
     target_segments = _filter_segments_by_paragraph_symbol(ref, full_context_segments) if full_context_segments else []
 
     if target_segments:
@@ -323,6 +449,15 @@ async def _build_user_prompt(ref: Optional[str], segments: Optional[List[Dict[st
     return "\n".join(parts)
 
 
+def _canonical_key(ref: Optional[str]) -> Optional[str]:
+    """Normalizes Sefaria references to a uniform canonical key (e.g. 'Menachot 29b:2' -> 'Menachot.29b.2')."""
+    if not ref:
+        return None
+    cleaned = ref.strip().replace(" ", ".").replace(":", ".")
+    cleaned = re.sub(r"\.+", ".", cleaned)
+    return cleaned
+
+
 @router.post("/calculate-map", response_model=SugyaMapResponse)
 @router.post("/calculate-map/", response_model=SugyaMapResponse)
 async def calculate_sugya_map(payload: SugyaMapRequest):
@@ -332,11 +467,33 @@ async def calculate_sugya_map(payload: SugyaMapRequest):
     if not payload.ref and not payload.segments:
         raise HTTPException(status_code=400, detail="Either 'ref' or 'segments' must be provided.")
 
-    cache_key = payload.ref or (payload.segments[0].get("ref") if payload.segments else None)
-    if cache_key and cache_key in SUGYA_MAP_CACHE and not payload.force_recalculate:
-        logger.info(f"Returning cached sugya map for ref: {cache_key}")
-        cached_data = SUGYA_MAP_CACHE[cache_key]
-        return SugyaMapResponse(**cached_data)
+    raw_key = payload.ref or (payload.segments[0].get("ref") if payload.segments else None)
+    cache_key = _canonical_key(raw_key)
+
+    if cache_key and not payload.force_recalculate:
+        # 1. In-memory / disk cache check
+        if cache_key in SUGYA_MAP_CACHE:
+            logger.info(f"Returning cached sugya map from global registry for ref: {cache_key}")
+            return SugyaMapResponse(**SUGYA_MAP_CACHE[cache_key])
+
+        # 2. PostgreSQL DB lookup
+        if async_session_factory and SugyaMapCache and select:
+            try:
+                async with async_session_factory() as session:
+                    result = await session.execute(select(SugyaMapCache).where(SugyaMapCache.ref == cache_key))
+                    db_obj = result.scalar_one_or_none()
+                    if db_obj:
+                        cached_data = {
+                            "sugya_title": db_obj.sugya_title,
+                            "mishnah_summary": db_obj.mishnah_summary,
+                            "markdown_tree": db_obj.markdown_tree,
+                            "nodes": db_obj.nodes,
+                        }
+                        SUGYA_MAP_CACHE[cache_key] = cached_data
+                        logger.info(f"Loaded sugya map from PostgreSQL DB for ref: {cache_key}")
+                        return SugyaMapResponse(**cached_data)
+            except Exception as db_err:
+                logger.warning(f"PostgreSQL sugya map lookup failed: {db_err}")
 
     try:
         llm_client, model, reasoning_params, capabilities = get_llm_for_task("SUGYA_MAP_GEN")
@@ -398,7 +555,35 @@ async def calculate_sugya_map(payload: SugyaMapRequest):
     try:
         response_obj = SugyaMapResponse(**data)
         if cache_key:
-            SUGYA_MAP_CACHE[cache_key] = response_obj.model_dump()
+            data_dict = response_obj.model_dump()
+            SUGYA_MAP_CACHE[cache_key] = data_dict
+            _save_disk_cache()
+
+            # Save to PostgreSQL DB
+            if async_session_factory and SugyaMapCache and pg_insert:
+                try:
+                    async with async_session_factory() as session:
+                        stmt = pg_insert(SugyaMapCache).values(
+                            ref=cache_key,
+                            sugya_title=response_obj.sugya_title,
+                            mishnah_summary=response_obj.mishnah_summary,
+                            markdown_tree=response_obj.markdown_tree,
+                            nodes=[n.model_dump() for n in response_obj.nodes],
+                        ).on_conflict_do_update(
+                            index_elements=["ref"],
+                            set_={
+                                "sugya_title": response_obj.sugya_title,
+                                "mishnah_summary": response_obj.mishnah_summary,
+                                "markdown_tree": response_obj.markdown_tree,
+                                "nodes": [n.model_dump() for n in response_obj.nodes],
+                            }
+                        )
+                        await session.execute(stmt)
+                        await session.commit()
+                        logger.info(f"Persisted sugya map to PostgreSQL DB for ref: {cache_key}")
+                except Exception as db_err:
+                    logger.warning(f"Failed to persist sugya map to PostgreSQL: {db_err}")
+
         return response_obj
     except Exception as exc:
         logger.error(f"SugyaMapResponse validation error: {exc}", exc_info=True)

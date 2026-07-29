@@ -1,0 +1,27 @@
+{
+  "Chullin.89b.9": {
+    "sugya_title": "Разбор правила Мишны",
+    "mishnah_summary": null,
+    "markdown_tree": "# Statement\n## Question\n### Attack",
+    "nodes": [
+      {
+        "id": "node_1",
+        "level": 1,
+        "type": "Statement",
+        "title": "Тезис Мишны",
+        "ref": "Chullin 89b:9",
+        "start_anchor": "מאימתי",
+        "end_anchor": "עד שיכלה"
+      },
+      {
+        "id": "node_2",
+        "level": 2,
+        "type": "Question",
+        "title": "Вопрос Гмары",
+        "ref": "Chullin 89b:10",
+        "start_anchor": "מנא הני מילי",
+        "end_anchor": "דאמר קרא"
+      }
+    ]
+  }
+}
