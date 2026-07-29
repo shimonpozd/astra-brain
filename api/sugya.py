@@ -1,0 +1,426 @@
+import json
+import re
+import logging
+from typing import Any, Dict, List, Optional
+import httpx
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from core.llm_config import LLMConfigError, get_llm_for_task
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+SYSTEM_PROMPT = """You are an expert Talmudic logic analyst. Analyze the provided Gemara sugya sequence (Hebrew and English) representing the complete Talmudic sugya topic.
+Deconstruct the logical hierarchy into a Markdown tree using headers (# H1, ## H2, ### H3, #### H4, ##### H5, ###### H6).
+The sugya sequence may span multiple segments (up to 20+ segments). You must analyze all logical steps across the full sequence from start to finish.
+
+For EACH node in the hierarchy, assign exactly ONE of the following logical types:
+- Statement (Mishna statement, core premise)
+- Question (Informational or structural question)
+- Attack (Kushya, contradiction, challenge)
+- Defense (Tirutz, resolution to an attack)
+- Proof (Ra'aya, proof from scripture or Tannaitic source)
+- Answer (Response to a simple question)
+
+LANGUAGE REQUIREMENT:
+Provide "sugya_title" and node "title" in Russian (Русский язык) so that the titles and explanations are rendered in Russian for the user.
+The start_anchor and end_anchor MUST remain exact Hebrew/Aramaic substrings from the original Hebrew text.
+
+OUTPUT FORMAT REQUIREMENTS:
+Return valid JSON matching this schema:
+{
+  "sugya_title": "Короткий заголовок темы сугии на русском языке",
+  "markdown_tree": "Markdown string formatted with H1-H6 headers",
+  "nodes": [
+    {
+      "id": "node_1",
+      "level": 1,
+      "type": "Statement" | "Question" | "Attack" | "Defense" | "Proof" | "Answer",
+      "title": "Краткое описание логического шага на русском языке",
+      "ref": "Sefaria segment reference (e.g. Chullin 89b:10)",
+      "start_anchor": "Exact first 2-4 Hebrew words of this block",
+      "end_anchor": "Exact last 2-4 Hebrew words of this block"
+    }
+  ]
+}
+
+CRITICAL: The start_anchor and end_anchor MUST be exact substrings from the Hebrew text. Ensure all string values inside JSON are properly escaped (do NOT put raw unescaped double quotes inside titles or sugya_title). Do NOT include trailing commas."""
+
+
+def _clean_and_parse_json(cleaned: str) -> Dict[str, Any]:
+    """
+    Robustly parses JSON from LLM outputs with fallbacks for trailing commas,
+    unescaped quotes, or markdown codeblocks.
+    """
+    # 1. Direct standard json.loads
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # 2. Try json_repair package if installed
+    try:
+        import json_repair
+        repaired = json_repair.repair_json(cleaned, return_objects=True)
+        if isinstance(repaired, dict):
+            return repaired
+    except Exception:
+        pass
+
+    # 3. Fix trailing commas before closing brackets/braces
+    fixed = re.sub(r",\s*([\}\]])", r"\1", cleaned)
+    try:
+        return json.loads(fixed)
+    except Exception:
+        pass
+
+    # 4. Extract outer {...} JSON block
+    m = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    if m:
+        block = m.group(0)
+        block_fixed = re.sub(r",\s*([\}\]])", r"\1", block)
+        try:
+            return json.loads(block_fixed)
+        except Exception:
+            pass
+
+    # Final attempt: re-raise original JSON error
+    return json.loads(cleaned)
+
+
+SUGYA_MAP_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+class SugyaMapRequest(BaseModel):
+    ref: Optional[str] = None
+    segments: Optional[List[Dict[str, Any]]] = None
+    model: Optional[str] = None
+    force_recalculate: Optional[bool] = False
+
+
+class SugyaNode(BaseModel):
+    id: str
+    level: int
+    type: str  # Statement | Question | Attack | Defense | Proof | Answer
+    title: str
+    ref: Optional[str] = None
+    start_anchor: Optional[str] = None
+    end_anchor: Optional[str] = None
+
+
+class SugyaMapResponse(BaseModel):
+    sugya_title: str
+    markdown_tree: str
+    nodes: List[SugyaNode]
+
+
+def _filter_segments_by_paragraph_symbol(ref: Optional[str], segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Finds the exact Sefaria Sugya topic range bounded by paragraph symbols '§'.
+    Scans backward from focus ref to find the starting '§', and scans forward
+    to find the next '§' (which marks the start of the next topic).
+    Returns all segments from the previous '§' up to the segment before the next '§'.
+    """
+    if not segments:
+        return []
+
+    # 1. Find focus index matching the target reference
+    focus_idx = 0
+    if ref:
+        for idx, seg in enumerate(segments):
+            if seg.get("ref") == ref:
+                focus_idx = idx
+                break
+
+    # 2. Scan BACKWARD from focus_idx to find segment containing the starting '§'
+    start_idx = 0
+    for i in range(focus_idx, -1, -1):
+        he = segments[i].get("he_text") or segments[i].get("heText") or ""
+        en = segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or ""
+        if "§" in he or "§" in en:
+            start_idx = i
+            break
+
+    # 3. Scan FORWARD from focus_idx + 1 to find segment containing the NEXT '§' (start of next sugya)
+    end_idx = len(segments)
+    for i in range(focus_idx + 1, len(segments)):
+        he = segments[i].get("he_text") or segments[i].get("heText") or ""
+        en = segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or ""
+        if "§" in he or "§" in en:
+            end_idx = i  # exclude segment starting the NEXT sugya topic
+            break
+
+    # Safeguard: if start_idx >= end_idx (e.g. focus_idx is on the next § itself), include up to next § or max 15
+    if start_idx >= end_idx:
+        end_idx = min(len(segments), start_idx + 1)
+        for i in range(start_idx + 1, len(segments)):
+            he = segments[i].get("he_text") or segments[i].get("heText") or ""
+            en = segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or ""
+            if "§" in he or "§" in en:
+                end_idx = i
+                break
+            end_idx = i + 1
+
+    return segments[start_idx:end_idx]
+
+
+def _parse_talmud_ref(ref_str: str):
+    m = re.match(r"^(.+?)\s+(\d+)([ab])(?::|\.|\s*(\d+))?", ref_str.strip(), re.IGNORECASE)
+    if not m:
+        return None
+    book = m.group(1).strip()
+    daf_num = int(m.group(2))
+    amud = m.group(3).lower()
+    segment_num = int(m.group(4)) if m.group(4) else None
+    return book, daf_num, amud, segment_num
+
+
+def _get_prev_amud_ref(ref_str: str) -> str | None:
+    parsed = _parse_talmud_ref(ref_str)
+    if not parsed:
+        return None
+    book, daf_num, amud, _ = parsed
+    if amud == "b":
+        return f"{book} {daf_num}a"
+    elif amud == "a" and daf_num > 2:
+        return f"{book} {daf_num - 1}b"
+    return None
+
+
+def _get_next_amud_ref(ref_str: str) -> str | None:
+    parsed = _parse_talmud_ref(ref_str)
+    if not parsed:
+        return None
+    book, daf_num, amud, _ = parsed
+    if amud == "a":
+        return f"{book} {daf_num}b"
+    elif amud == "b":
+        return f"{book} {daf_num + 1}a"
+    return None
+
+
+async def _fetch_sefaria_amud_segments(amud_ref: str) -> List[Dict[str, Any]]:
+    sefaria_ref = amud_ref.strip().replace(" ", ".")
+    url = f"https://www.sefaria.org/api/texts/{sefaria_ref}?commentary=0&context=0"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.get(url)
+            if res.status_code != 200:
+                return []
+            data = res.json()
+            he = data.get("he", [])
+            en = data.get("text", [])
+            if isinstance(he, str): he = [he]
+            if isinstance(en, str): en = [en]
+
+            segments = []
+            max_len = max(len(he), len(en))
+            for i in range(max_len):
+                h_text = he[i] if i < len(he) else ""
+                e_text = en[i] if i < len(en) else ""
+                seg_ref = f"{amud_ref}:{i+1}"
+                segments.append({
+                    "ref": seg_ref,
+                    "he_text": h_text,
+                    "en_text": e_text,
+                })
+            return segments
+    except Exception as err:
+        logger.warning(f"Failed to fetch Sefaria amud {amud_ref}: {err}")
+        return []
+
+
+async def _ensure_full_cross_page_context(ref: Optional[str], segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    If the provided segments do NOT contain a starting '§' before the focus ref,
+    fetches the previous page/amud from Sefaria and prepends its segments.
+    If no ending '§' is found after the focus ref, fetches the next page/amud.
+    """
+    if not ref:
+        return segments or []
+
+    working_segments = list(segments) if segments else []
+
+    # If working_segments is empty, fetch the focus amud first
+    if not working_segments:
+        parsed = _parse_talmud_ref(ref)
+        if parsed:
+            book, daf_num, amud, _ = parsed
+            focus_amud = f"{book} {daf_num}{amud}"
+            working_segments = await _fetch_sefaria_amud_segments(focus_amud)
+
+    if not working_segments:
+        return []
+
+    # Check if there is a starting '§' before focus_idx
+    focus_idx = 0
+    for idx, seg in enumerate(working_segments):
+        if seg.get("ref") == ref:
+            focus_idx = idx
+            break
+
+    has_prev_section_symbol = any(
+        "§" in (s.get("he_text") or s.get("heText") or "") or "§" in (s.get("en_text") or s.get("enText") or s.get("text") or "")
+        for s in working_segments[:focus_idx + 1]
+    )
+
+    if not has_prev_section_symbol:
+        prev_amud_ref = _get_prev_amud_ref(ref)
+        if prev_amud_ref:
+            logger.info(f"Sugya start not found on current amud. Fetching previous amud: {prev_amud_ref}")
+            prev_segments = await _fetch_sefaria_amud_segments(prev_amud_ref)
+            if prev_segments:
+                working_segments = prev_segments + working_segments
+
+    # Check if there is a closing '§' after focus_idx
+    focus_idx = 0
+    for idx, seg in enumerate(working_segments):
+        if seg.get("ref") == ref:
+            focus_idx = idx
+            break
+
+    has_next_section_symbol = any(
+        "§" in (s.get("he_text") or s.get("heText") or "") or "§" in (s.get("en_text") or s.get("enText") or s.get("text") or "")
+        for s in working_segments[focus_idx + 1:]
+    )
+
+    if not has_next_section_symbol:
+        next_amud_ref = _get_next_amud_ref(ref)
+        if next_amud_ref:
+            logger.info(f"Sugya end not found on current amud. Fetching next amud: {next_amud_ref}")
+            next_segments = await _fetch_sefaria_amud_segments(next_amud_ref)
+            if next_segments:
+                working_segments = working_segments + next_segments
+
+    return working_segments
+
+
+async def _build_user_prompt(ref: Optional[str], segments: Optional[List[Dict[str, Any]]]) -> str:
+    parts = []
+    if ref:
+        parts.append(f"SUGYA FOCUS REFERENCE: {ref}")
+
+    full_context_segments = await _ensure_full_cross_page_context(ref, segments or [])
+    target_segments = _filter_segments_by_paragraph_symbol(ref, full_context_segments) if full_context_segments else []
+
+    if target_segments:
+        parts.append(f"SUGYA FULL SEQUENCE ({len(target_segments)} segments):")
+        for seg in target_segments:
+            seg_ref = seg.get("ref", "")
+            he = seg.get("he_text") or seg.get("heText") or ""
+            en = seg.get("en_text") or seg.get("enText") or seg.get("text") or ""
+            parts.append(f"--- Segment [{seg_ref}] ---")
+            if he:
+                parts.append(f"Hebrew/Aramaic: {he}")
+            if en:
+                parts.append(f"English: {en}")
+    else:
+        parts.append("Please analyze the sugya for the given reference.")
+
+    return "\n".join(parts)
+
+
+@router.post("/calculate-map", response_model=SugyaMapResponse)
+@router.post("/calculate-map/", response_model=SugyaMapResponse)
+async def calculate_sugya_map(payload: SugyaMapRequest):
+    """
+    Analyzes Talmudic sugya text and generates logical hierarchy (Sugya Mind Map).
+    """
+    if not payload.ref and not payload.segments:
+        raise HTTPException(status_code=400, detail="Either 'ref' or 'segments' must be provided.")
+
+    cache_key = payload.ref or (payload.segments[0].get("ref") if payload.segments else None)
+    if cache_key and cache_key in SUGYA_MAP_CACHE and not payload.force_recalculate:
+        logger.info(f"Returning cached sugya map for ref: {cache_key}")
+        cached_data = SUGYA_MAP_CACHE[cache_key]
+        return SugyaMapResponse(**cached_data)
+
+    try:
+        llm_client, model, reasoning_params, capabilities = get_llm_for_task("SUGYA_MAP_GEN")
+    except LLMConfigError as exc:
+        logger.warning(f"LLM config error for SUGYA_MAP_GEN: {exc}. Falling back to STUDY task.")
+        try:
+            llm_client, model, reasoning_params, capabilities = get_llm_for_task("STUDY")
+        except LLMConfigError:
+            try:
+                llm_client, model, reasoning_params, capabilities = get_llm_for_task("CHAT")
+            except LLMConfigError as fallback_exc:
+                raise HTTPException(status_code=500, detail=f"LLM configuration error: {fallback_exc}")
+
+    if payload.model and payload.model.strip():
+        model = payload.model.strip()
+
+    user_prompt = await _build_user_prompt(payload.ref, payload.segments)
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt},
+    ]
+
+    req: Dict[str, Any] = {
+        **reasoning_params,
+        "model": model,
+        "messages": messages,
+        "stream": False,
+    }
+    if "json_mode" in capabilities:
+        req["response_format"] = {"type": "json_object"}
+
+    try:
+        completion = await llm_client.chat.completions.create(**req)
+    except Exception as exc:
+        logger.error("LLM call failed for Sugya Map calculation", extra={"error": str(exc)}, exc_info=True)
+        raise HTTPException(status_code=502, detail=f"LLM completion failed: {exc}")
+
+    content = completion.choices[0].message.content if completion and completion.choices else ""
+    if not content:
+        raise HTTPException(status_code=502, detail="Empty response from LLM")
+
+    # Clean markdown json codeblock wrappers if present
+    cleaned = content.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[-1]
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        elif "```" in cleaned:
+            cleaned = cleaned.rsplit("```", 1)[0]
+    cleaned = cleaned.strip()
+
+    try:
+        data = _clean_and_parse_json(cleaned)
+    except Exception as exc:
+        logger.error(f"Failed to parse LLM response as JSON: {cleaned[:200]}...", exc_info=True)
+        raise HTTPException(status_code=502, detail="LLM response was not valid JSON")
+
+    try:
+        response_obj = SugyaMapResponse(**data)
+        if cache_key:
+            SUGYA_MAP_CACHE[cache_key] = response_obj.model_dump()
+        return response_obj
+    except Exception as exc:
+        logger.error(f"SugyaMapResponse validation error: {exc}", exc_info=True)
+        # Fallback formatting if dict missing required keys
+        nodes = []
+        raw_nodes = data.get("nodes", [])
+        if isinstance(raw_nodes, list):
+            for i, n in enumerate(raw_nodes):
+                if isinstance(n, dict):
+                    nodes.append(SugyaNode(
+                        id=str(n.get("id", f"node_{i+1}")),
+                        level=int(n.get("level", 1)),
+                        type=str(n.get("type", "Statement")),
+                        title=str(n.get("title", f"Node {i+1}")),
+                        ref=n.get("ref"),
+                        start_anchor=n.get("start_anchor"),
+                        end_anchor=n.get("end_anchor"),
+                    ))
+
+        fallback_obj = SugyaMapResponse(
+            sugya_title=data.get("sugya_title") or payload.ref or "Сугия",
+            markdown_tree=data.get("markdown_tree") or "",
+            nodes=nodes,
+        )
+        if cache_key:
+            SUGYA_MAP_CACHE[cache_key] = fallback_obj.model_dump()
+        return fallback_obj
