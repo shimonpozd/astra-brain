@@ -24,13 +24,14 @@ For EACH node in the hierarchy, assign exactly ONE of the following logical type
 - Answer (Response to a simple question)
 
 LANGUAGE REQUIREMENT:
-Provide "sugya_title" and node "title" in Russian (Русский язык) so that the titles and explanations are rendered in Russian for the user.
+Provide "sugya_title", "mishnah_summary", and node "title" in Russian (Русский язык) so that the titles and explanations are rendered in Russian for the user.
 The start_anchor and end_anchor MUST remain exact Hebrew/Aramaic substrings from the original Hebrew text.
 
 OUTPUT FORMAT REQUIREMENTS:
 Return valid JSON matching this schema:
 {
   "sugya_title": "Короткий заголовок темы сугии на русском языке",
+  "mishnah_summary": "Краткий перевод/резюме Мишны на русском языке, к которой относится эта сугья (что говорит исходная Мишна)",
   "markdown_tree": "Markdown string formatted with H1-H6 headers",
   "nodes": [
     {
@@ -111,6 +112,7 @@ class SugyaNode(BaseModel):
 
 class SugyaMapResponse(BaseModel):
     sugya_title: str
+    mishnah_summary: Optional[str] = Field(None, description="Краткое резюме Мишны на русском языке")
     markdown_tree: str
     nodes: List[SugyaNode]
 
