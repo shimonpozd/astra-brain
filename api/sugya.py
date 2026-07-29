@@ -554,17 +554,30 @@ async def calculate_sugya_map(payload: SugyaMapRequest):
 
     try:
         response_obj = SugyaMapResponse(**data)
-        if cache_key:
-            data_dict = response_obj.model_dump()
-            SUGYA_MAP_CACHE[cache_key] = data_dict
-            _save_disk_cache()
+        data_dict = response_obj.model_dump()
 
-            # Save to PostgreSQL DB
-            if async_session_factory and SugyaMapCache and pg_insert:
-                try:
-                    async with async_session_factory() as session:
+        # Collect all refs in the sugya (from focus ref and all nodes in the tree)
+        refs_to_cache = set()
+        if cache_key:
+            refs_to_cache.add(cache_key)
+        for node in response_obj.nodes:
+            if node.ref:
+                c_node_key = _canonical_key(node.ref)
+                if c_node_key:
+                    refs_to_cache.add(c_node_key)
+
+        for r_key in refs_to_cache:
+            SUGYA_MAP_CACHE[r_key] = data_dict
+
+        _save_disk_cache()
+
+        # Save to PostgreSQL DB for all refs in the sugya
+        if async_session_factory and SugyaMapCache and pg_insert:
+            try:
+                async with async_session_factory() as session:
+                    for r_key in refs_to_cache:
                         stmt = pg_insert(SugyaMapCache).values(
-                            ref=cache_key,
+                            ref=r_key,
                             sugya_title=response_obj.sugya_title,
                             mishnah_summary=response_obj.mishnah_summary,
                             markdown_tree=response_obj.markdown_tree,
@@ -579,10 +592,10 @@ async def calculate_sugya_map(payload: SugyaMapRequest):
                             }
                         )
                         await session.execute(stmt)
-                        await session.commit()
-                        logger.info(f"Persisted sugya map to PostgreSQL DB for ref: {cache_key}")
-                except Exception as db_err:
-                    logger.warning(f"Failed to persist sugya map to PostgreSQL: {db_err}")
+                    await session.commit()
+                    logger.info(f"Persisted sugya map to PostgreSQL DB for {len(refs_to_cache)} refs: {list(refs_to_cache)}")
+            except Exception as db_err:
+                logger.warning(f"Failed to persist sugya map to PostgreSQL: {db_err}")
 
         return response_obj
     except Exception as exc:
