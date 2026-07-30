@@ -78,6 +78,13 @@ class ArticleUpdate(BaseModel):
 
 class SegmentCreate(BaseModel):
     order_index: int = 0
+    source_ref: Optional[str] = None
+    sub_index: int = 0
+    role: Optional[str] = None
+    start_anchor: Optional[str] = None
+    end_anchor: Optional[str] = None
+    start_word_idx: Optional[int] = None
+    end_word_idx: Optional[int] = None
     text_he: Optional[str] = None
     text_ru: Optional[str] = None
     status_he: Optional[str] = None
@@ -85,6 +92,13 @@ class SegmentCreate(BaseModel):
 
 
 class SegmentUpdate(BaseModel):
+    source_ref: Optional[str] = None
+    sub_index: Optional[int] = None
+    role: Optional[str] = None
+    start_anchor: Optional[str] = None
+    end_anchor: Optional[str] = None
+    start_word_idx: Optional[int] = None
+    end_word_idx: Optional[int] = None
     text_he: Optional[str] = None
     text_ru: Optional[str] = None
     status_he: Optional[str] = None

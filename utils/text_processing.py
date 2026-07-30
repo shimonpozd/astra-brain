@@ -73,3 +73,44 @@ def build_search_patterns(*terms: str) -> list[str]:
         if pat:
             patterns.append(pat)
     return patterns
+
+
+def fuzzy_find_anchor(text: str, anchor: str) -> tuple[int, int]:
+    """
+    Find anchor in Hebrew text safely, ignoring niqqud, taamim, and punctuation differences.
+    Returns (start_char_idx, end_char_idx) in original text, or (-1, -1) if not found.
+    """
+    if not text or not anchor:
+        return -1, -1
+
+    # 1. Exact match attempt
+    idx = text.find(anchor)
+    if idx != -1:
+        return idx, idx + len(anchor)
+
+    # 2. Normalized fuzzy match attempt
+    def _normalize_with_map(s: str) -> tuple[str, list[int]]:
+        chars = []
+        mapping = []
+        for orig_idx, ch in enumerate(s):
+            # Check if character is niqqud/taamim or punctuation
+            if re.match(r"[" + NIQQUD_RANGE + r".,;:!?’“”\"'()\[\]{}\-–—·]", ch):
+                continue
+            chars.append(ch)
+            mapping.append(orig_idx)
+        return "".join(chars), mapping
+
+    norm_text, text_map = _normalize_with_map(text)
+    norm_anchor, _ = _normalize_with_map(anchor)
+
+    if not norm_text or not norm_anchor:
+        return -1, -1
+
+    match_idx = norm_text.find(norm_anchor)
+    if match_idx != -1 and text_map:
+        start_orig = text_map[match_idx]
+        end_norm_idx = match_idx + len(norm_anchor) - 1
+        end_orig = text_map[end_norm_idx] + 1 if end_norm_idx < len(text_map) else len(text)
+        return start_orig, end_orig
+
+    return -1, -1

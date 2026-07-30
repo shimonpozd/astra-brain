@@ -260,10 +260,22 @@ class SederMapService:
         created: List[SederSegment] = []
         async with self._session_factory() as session:
             async with session.begin():
-                for item in segments:
+                seg_list = list(segments)
+                for idx, item in enumerate(seg_list):
+                    # Sparse order_index stepping (100, 200, 300...)
+                    provided_order = item.get("order_index")
+                    order_val = (idx + 1) * 100 if (provided_order is None or provided_order == 0) else provided_order
+
                     seg = SederSegment(
                         article_id=article_id,
-                        order_index=item.get("order_index", 0),
+                        order_index=order_val,
+                        source_ref=item.get("source_ref"),
+                        sub_index=item.get("sub_index", 0),
+                        role=item.get("role"),
+                        start_anchor=item.get("start_anchor"),
+                        end_anchor=item.get("end_anchor"),
+                        start_word_idx=item.get("start_word_idx"),
+                        end_word_idx=item.get("end_word_idx"),
                         text_he=item.get("text_he"),
                         text_ru=item.get("text_ru"),
                         status_he=item.get("status_he"),
@@ -291,6 +303,10 @@ class SederMapService:
                 expected_version = payload.get("version")
                 if expected_version is None or segment.version != int(expected_version):
                     raise ValueError("version_conflict")
+
+                for f in ["source_ref", "sub_index", "role", "start_anchor", "end_anchor", "start_word_idx", "end_word_idx"]:
+                    if f in payload:
+                        setattr(segment, f, payload[f])
 
                 text_he = payload.get("text_he")
                 text_ru = payload.get("text_ru")
@@ -555,6 +571,13 @@ class SederMapService:
             "id": str(segment.id),
             "article_id": str(segment.article_id),
             "order_index": segment.order_index,
+            "source_ref": segment.source_ref,
+            "sub_index": segment.sub_index,
+            "role": segment.role,
+            "start_anchor": segment.start_anchor,
+            "end_anchor": segment.end_anchor,
+            "start_word_idx": segment.start_word_idx,
+            "end_word_idx": segment.end_word_idx,
             "text_he": segment.text_he,
             "text_ru": segment.text_ru,
             "status_he": segment.status_he,
