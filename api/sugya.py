@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -22,7 +23,7 @@ except Exception as _import_err:
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-CACHE_FILE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "sugya_maps_cache.json")
+CACHE_FILE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "sugya_maps_cache_v4_parent_id.json")
 
 
 def _load_disk_cache() -> Dict[str, Dict[str, Any]]:
@@ -31,7 +32,7 @@ def _load_disk_cache() -> Dict[str, Dict[str, Any]]:
         if os.path.exists(CACHE_FILE_PATH):
             with open(CACHE_FILE_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                logger.info(f"Loaded {len(data)} cached sugya maps from disk.")
+                logger.info(f"Loaded {len(data)} cached v4 sugya maps from disk.")
                 return data
     except Exception as err:
         logger.warning(f"Failed to load sugya maps disk cache: {err}")
@@ -50,144 +51,123 @@ def _save_disk_cache():
 
 SUGYA_MAP_CACHE: Dict[str, Dict[str, Any]] = _load_disk_cache()
 
-SYSTEM_PROMPT = """You are an expert Talmudic logic analyst. Analyze the provided Gemara sugya sequence (Hebrew and English) representing the complete Talmudic sugya topic.
-Deconstruct the logical hierarchy into a Markdown tree using headers (# H1, ## H2, ### H3, #### H4, ##### H5, ###### H6).
-The sugya sequence may span multiple segments (up to 20+ segments). You must analyze all logical steps across the full sequence from start to finish.
 
-CRITICAL DISCOURSE SEGMENTATION RULE (1 REF -> N LOGICAL NODES):
-Paragraph boundaries and Sefaria ref boundaries (\n, ¶) are arbitrary publisher layout choices. A single source paragraph/ref can contain MULTIPLE logical steps (e.g., an Attack followed by a Defense). Whenever the rhetorical function changes mid-paragraph, you MUST create separate logical nodes for each step, sharing the same ref!
-
-For EACH node in the hierarchy, assign exactly ONE of the following 6 canonical logical types:
-- Statement (Mishna statement, Amoraic premise)
-- Question (Informational or structural question)
-- Attack (Kushya, contradiction, challenge)
-- Defense (Tirutz, resolution to an attack)
-- Proof (Ra'aya, proof from scripture or Tannaitic source)
-- Answer (Response to a simple question)
-
-FEW-SHOT BENCHMARK EXAMPLE:
-Input Ref: Chullin 91a:11
-Input Text HE: "וְאִי פְּשִׁיטָא לֵיהּ, אַמַּאי סוֹפֵג אַרְבָּעִים וְתוּ לָא? לִילְקֵי שְׁמוֹנִים! הָכָא בְּמַאי עָסְקִינַן – כְּגוֹן דְּלֵית בּוֹ כְּזַיִת..."
-Input Text EN: "The Gemara seeks to clarify... Let him be flogged eighty times. The Gemara answers: Here we are dealing with..."
-
-Output Nodes:
-- Node 1 (Attack): "וְאִי פְּשִׁיטָא לֵיהּ, אַמַּאי סוֹפֵג אַרְבָּעִים וְתוּ לָא? לִילְקֵי שְׁמוֹנִים!" (ref: Chullin 91a:11, start_word_idx: 0, end_word_idx: 10)
-- Node 2 (Defense): "הָכָא בְּמַאי עָסְקִינַן – כְּגוֹן דְּלֵית בּוֹ כְּזַיִת..." (ref: Chullin 91a:11, start_word_idx: 11, end_word_idx: 25)
-
-LANGUAGE & DETAIL REQUIREMENTS (КРИТИЧЕСКИ ВАЖНО):
-1. Provide "sugya_title", "mishnah_summary", and node "title" in Russian (Русский язык).
-2. NO GENERIC TITLES: Never use vague titles like "Спор о жертвах", "Вопрос о глухонемом", or "Мнение Раבби Йоханана".
-3. EXPLICIT SAGE OPINIONS & REASONING REQUIRED: In every title and in "mishnah_summary", you MUST explicitly state:
-   - WHO holds which position (name of the Sage / Tanna / Amora).
-   - WHAT their specific opinion or ruling is.
-   - WHY (their reasoning, proof, or textual source).
-   Good Example: "Рабби Хизкия считает, что запрет покрывать кровь действует даже на несъедобные жертвы, а Рабби Йоханан возражает, что несъедобное не считается едой."
-   Bad Example: "Спор о применимости запрета к несъедобным жертвам."
-4. The start_anchor and end_anchor MUST remain exact Hebrew/Aramaic substrings from the original Hebrew text. Provide start_word_idx and end_word_idx as 0-indexed word counts in the space-split Hebrew text.
-
-OUTPUT FORMAT REQUIREMENTS:
-Return valid JSON matching this schema:
-{
-  "sugya_title": "Короткий заголовок темы сугии на русском языке с указанием сути предмета спора",
-  "mishnah_summary": "Детальное резюме/перевод исходной Мишны на русском языке с указанием мнений каждого Танная (например, 'Рабби Меир говорит X, а Мудрецы говорят Y')",
-  "markdown_tree": "Markdown string formatted with H1-H6 headers",
-  "nodes": [
-    {
-      "id": "node_1",
-      "level": 1,
-      "type": "Statement" | "Question" | "Attack" | "Defense" | "Proof" | "Answer",
-      "title": "Детальное описание логического шага на русском языке (КТО считает ЧТО и ПОЧЕМУ)",
-      "ref": "Sefaria segment reference (e.g. Chullin 89b:10)",
-      "sub_index": 0,
-      "start_anchor": "Exact first 2-4 Hebrew words of this block",
-      "end_anchor": "Exact last 2-4 Hebrew words of this block",
-      "start_word_idx": 0,
-      "end_word_idx": 10
-    }
-  ]
-}
-
-CRITICAL: The start_anchor and end_anchor MUST be exact substrings from the Hebrew text. Ensure all string values inside JSON are properly escaped (do NOT put raw unescaped double quotes inside titles or sugya_title). Do NOT include trailing commas."""
+def strip_nikud_and_punct(text: str) -> str:
+    """Strips Hebrew vowels (nikud), cantillation (taamim), HTML tags, and normalizes punctuation."""
+    if not text:
+        return ""
+    text = re.sub(r"[\u0591-\u05C7]", "", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = text.replace("״", '"').replace("׳", "'").replace("–", "-")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
-def _extract_governing_mishnah(segments: List[Dict[str, Any]], focus_ref: Optional[str] = None) -> Optional[Dict[str, str]]:
+def process_segment_spans_continuous(he_text: str, spans: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    Scans segments to extract the full multi-segment Mishnah.
-    Starts at segment containing 'MISHNAH' / 'Mishna' in English text.
-    Collects all consecutive segments until 'GEMARA' / 'Gemara:' is reached.
+    Рассчитывает сплошные границы (без дыр и пробоин) для спанов сегмента.
+    Конец каждого спана упирается в начало следующего спана.
     """
-    if not segments:
-        return None
+    if not he_text or not spans:
+        return spans
 
-    # 1. Find focus index
-    focus_idx = 0
-    if focus_ref:
-        for idx, seg in enumerate(segments):
-            if seg.get("ref") == focus_ref:
-                focus_idx = idx
-                break
+    # Очистка от HTML перед разбивкой на слова для точного подсчета слов
+    he_text_no_html = re.sub(r"<[^>]+>", " ", he_text)
+    words = he_text_no_html.split()
+    total_words = len(words)
 
-    # 2. Find starting Mishnah segment (scan backward from focus_idx)
-    mishnah_start_idx = -1
-    for i in range(focus_idx, -1, -1):
-        en_text = (segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or "").strip()
-        if re.search(r"\bMISHNAH\b|\bMishna\b", en_text, re.IGNORECASE):
-            mishnah_start_idx = i
-            break
+    clean_he = strip_nikud_and_punct(he_text)
+    last_found_idx = 0
 
-    # Fallback scan from beginning if not found backward
-    if mishnah_start_idx == -1:
-        for i in range(len(segments)):
-            en_text = (segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or "").strip()
-            if re.search(r"\bMISHNAH\b|\bMishna\b", en_text, re.IGNORECASE):
-                mishnah_start_idx = i
-                break
+    # 1. Находим стартовые позиции всех спанов
+    for i, span in enumerate(spans):
+        start_quote = span.get("start_quote", "")
+        clean_start = strip_nikud_and_punct(start_quote)
+        
+        start_char_idx = -1
+        if clean_start:
+            # Ищем строго ПОСЛЕ предыдущего найденного спана
+            start_char_idx = clean_he.find(clean_start, last_found_idx)
+            if start_char_idx == -1:
+                # Fallback по первому слову цитаты
+                start_words = clean_start.split()
+                if start_words:
+                    start_char_idx = clean_he.find(start_words[0], last_found_idx)
 
-    if mishnah_start_idx == -1:
-        return None
+        if start_char_idx != -1:
+            last_found_idx = start_char_idx
+            span["_start_char"] = start_char_idx
+        else:
+            span["_start_char"] = last_found_idx if i > 0 else 0
 
-    he_parts = []
-    en_parts = []
+    # 2. Формируем непрерывные отрезки (Sliding Window)
+    processed = []
+    clean_words = clean_he.split()
 
-    for i in range(mishnah_start_idx, len(segments)):
-        seg = segments[i]
-        en_text = (seg.get("en_text") or seg.get("enText") or seg.get("text") or "").strip()
-        he_text = (seg.get("he_text") or seg.get("heText") or "").strip()
+    for i, span in enumerate(spans):
+        start_char = span["_start_char"]
+        
+        # Конец текущего спана = начало следующего спана (или конец сегмента)
+        if i + 1 < len(spans):
+            end_char = spans[i + 1]["_start_char"]
+            if end_char < start_char:
+                end_char = len(clean_he)
+        else:
+            end_char = len(clean_he)
 
-        # Stop if we hit GEMARA on subsequent segment
-        if i > mishnah_start_idx and re.search(r"\bGEMARA\b|\bGemara\b", en_text, re.IGNORECASE):
-            break
+        # Перевод символьных позиций в word_idx
+        start_w_idx = 0
+        end_w_idx = total_words
 
-        if he_text:
-            he_parts.append(he_text)
-        if en_text:
-            en_parts.append(en_text)
+        if clean_words:
+            curr_pos = 0
+            for w_i, w in enumerate(clean_words):
+                w_len = len(w)
+                if curr_pos <= start_char < curr_pos + w_len + 1:
+                    start_w_idx = w_i
+                    break
+                curr_pos += w_len + 1
 
-        # Stop if GEMARA is explicitly inside the current segment text
-        if re.search(r"\bGEMARA\b|\bGemara\b", en_text, re.IGNORECASE) and i > mishnah_start_idx:
-            break
+            curr_pos = 0
+            for w_i, w in enumerate(clean_words):
+                w_len = len(w)
+                if curr_pos < end_char <= curr_pos + w_len + 1:
+                    end_w_idx = w_i + 1
+                    break
+                curr_pos += w_len + 1
 
-    if not he_parts and not en_parts:
-        return None
+        if end_w_idx <= start_w_idx:
+            end_w_idx = min(total_words, start_w_idx + 1)
 
-    return {
-        "he_text": " ".join(he_parts),
-        "en_text": " ".join(en_parts),
-    }
+        orig_words = words[start_w_idx:end_w_idx]
+        start_anchor = " ".join(orig_words[:min(4, len(orig_words))]) if orig_words else span.get("start_quote", "")
+        end_anchor = " ".join(orig_words[-min(4, len(orig_words)):]) if orig_words else start_anchor
+
+        processed.append({
+            "ref": span.get("ref"),
+            "he_text": he_text,
+            "sub_index": span.get("sub_index", i),
+            "type": span.get("type", "Statement"),
+            "start_quote": span.get("start_quote", ""),
+            "end_quote": end_anchor,
+            "title_ru": span.get("title_ru", ""),
+            "speaker": span.get("speaker"),
+            "start_anchor": start_anchor,
+            "end_anchor": end_anchor,
+            "start_word_idx": start_w_idx,
+            "end_word_idx": end_w_idx,
+        })
+
+    return processed
 
 
 def _clean_and_parse_json(cleaned: str) -> Dict[str, Any]:
-    """
-    Robustly parses JSON from LLM outputs with fallbacks for trailing commas,
-    unescaped quotes, or markdown codeblocks.
-    """
-    # 1. Direct standard json.loads
+    """Robustly parses JSON from LLM outputs with fallbacks."""
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
 
-    # 2. Try json_repair package if installed
     try:
         import json_repair
         repaired = json_repair.repair_json(cleaned, return_objects=True)
@@ -196,14 +176,12 @@ def _clean_and_parse_json(cleaned: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # 3. Fix trailing commas before closing brackets/braces
     fixed = re.sub(r",\s*([\}\]])", r"\1", cleaned)
     try:
         return json.loads(fixed)
     except Exception:
         pass
 
-    # 4. Extract outer {...} JSON block
     m = re.search(r"\{.*\}", cleaned, re.DOTALL)
     if m:
         block = m.group(0)
@@ -213,11 +191,7 @@ def _clean_and_parse_json(cleaned: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # Final attempt: re-raise original JSON error
     return json.loads(cleaned)
-
-
-SUGYA_MAP_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 class SugyaMapRequest(BaseModel):
@@ -229,32 +203,34 @@ class SugyaMapRequest(BaseModel):
 
 class SugyaNode(BaseModel):
     id: str
-    level: int
+    level: Optional[int] = 1
     type: str  # Statement | Question | Attack | Defense | Proof | Answer
     title: str
     ref: Optional[str] = None
+    sub_index: Optional[int] = None
+    speaker: Optional[str] = None
+    parent_id: Optional[str] = None
+    relation_label: Optional[str] = None
+    start_quote: Optional[str] = None
+    end_quote: Optional[str] = None
     start_anchor: Optional[str] = None
     end_anchor: Optional[str] = None
+    start_word_idx: Optional[int] = None
+    end_word_idx: Optional[int] = None
 
 
 class SugyaMapResponse(BaseModel):
     sugya_title: str
-    mishnah_summary: Optional[str] = Field(None, description="Краткое резюме Мишны на русском языке")
+    version: int = 2
+    mishnah_summary: Optional[str] = None
     markdown_tree: str
     nodes: List[SugyaNode]
 
 
 def _filter_segments_by_paragraph_symbol(ref: Optional[str], segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Finds the exact Sefaria Sugya topic range bounded by paragraph symbols '§'.
-    Scans backward from focus ref to find the starting '§', and scans forward
-    to find the next '§' (which marks the start of the next topic).
-    Returns all segments from the previous '§' up to the segment before the next '§'.
-    """
     if not segments:
         return []
 
-    # 1. Find focus index matching the target reference
     focus_idx = 0
     if ref:
         for idx, seg in enumerate(segments):
@@ -262,7 +238,6 @@ def _filter_segments_by_paragraph_symbol(ref: Optional[str], segments: List[Dict
                 focus_idx = idx
                 break
 
-    # 2. Scan BACKWARD from focus_idx to find segment containing the starting '§'
     start_idx = 0
     for i in range(focus_idx, -1, -1):
         he = segments[i].get("he_text") or segments[i].get("heText") or ""
@@ -271,16 +246,14 @@ def _filter_segments_by_paragraph_symbol(ref: Optional[str], segments: List[Dict
             start_idx = i
             break
 
-    # 3. Scan FORWARD from focus_idx + 1 to find segment containing the NEXT '§' (start of next sugya)
     end_idx = len(segments)
     for i in range(focus_idx + 1, len(segments)):
         he = segments[i].get("he_text") or segments[i].get("heText") or ""
         en = segments[i].get("en_text") or segments[i].get("enText") or segments[i].get("text") or ""
         if "§" in he or "§" in en:
-            end_idx = i  # exclude segment starting the NEXT sugya topic
+            end_idx = i
             break
 
-    # Safeguard: if start_idx >= end_idx (e.g. focus_idx is on the next § itself), include up to next § or max 15
     if start_idx >= end_idx:
         end_idx = min(len(segments), start_idx + 1)
         for i in range(start_idx + 1, len(segments)):
@@ -361,17 +334,11 @@ async def _fetch_sefaria_amud_segments(amud_ref: str) -> List[Dict[str, Any]]:
 
 
 async def _ensure_full_cross_page_context(ref: Optional[str], segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    If the provided segments do NOT contain a starting '§' before the focus ref,
-    fetches the previous page/amud from Sefaria and prepends its segments.
-    If no ending '§' is found after the focus ref, fetches the next page/amud.
-    """
     if not ref:
         return segments or []
 
     working_segments = list(segments) if segments else []
 
-    # If working_segments is empty, fetch the focus amud first
     if not working_segments:
         parsed = _parse_talmud_ref(ref)
         if parsed:
@@ -382,7 +349,6 @@ async def _ensure_full_cross_page_context(ref: Optional[str], segments: List[Dic
     if not working_segments:
         return []
 
-    # Check if there is a starting '§' before focus_idx
     focus_idx = 0
     for idx, seg in enumerate(working_segments):
         if seg.get("ref") == ref:
@@ -402,7 +368,6 @@ async def _ensure_full_cross_page_context(ref: Optional[str], segments: List[Dic
             if prev_segments:
                 working_segments = prev_segments + working_segments
 
-    # Check if there is a closing '§' after focus_idx
     focus_idx = 0
     for idx, seg in enumerate(working_segments):
         if seg.get("ref") == ref:
@@ -425,47 +390,7 @@ async def _ensure_full_cross_page_context(ref: Optional[str], segments: List[Dic
     return working_segments
 
 
-async def _build_user_prompt(ref: Optional[str], segments: Optional[List[Dict[str, Any]]]) -> str:
-    parts = []
-    if ref:
-        parts.append(f"SUGYA FOCUS REFERENCE: {ref}")
-
-    full_context_segments = await _ensure_full_cross_page_context(ref, segments or [])
-
-    # Extract multi-segment Mishnah from 'MISHNAH' up to 'GEMARA'
-    mishnah_data = _extract_governing_mishnah(full_context_segments, focus_ref=ref)
-    if mishnah_data:
-        parts.append("==================================================")
-        parts.append("GOVERNING MISHNAH FOR THIS SUGYA (FULL MULTI-SEGMENT MISHNAH FROM 'MISHNAH' UNTIL 'GEMARA'):")
-        if mishnah_data.get("he_text"):
-            parts.append(f"Hebrew Mishnah Text:\n{mishnah_data['he_text']}")
-        if mishnah_data.get("en_text"):
-            parts.append(f"English Mishnah Text:\n{mishnah_data['en_text']}")
-        parts.append("==================================================")
-        parts.append("INSTRUCTION FOR 'mishnah_summary': Synthesize a detailed, explicit summary of this governing Mishnah in Russian. You MUST explicitly state WHICH Sage/Tanna holds WHICH opinion (e.g., 'Рабби Меир считает X, а Мудрецы считают Y').")
-        parts.append("")
-
-    target_segments = _filter_segments_by_paragraph_symbol(ref, full_context_segments) if full_context_segments else []
-
-    if target_segments:
-        parts.append(f"SUGYA FULL SEQUENCE ({len(target_segments)} segments):")
-        for seg in target_segments:
-            seg_ref = seg.get("ref", "")
-            he = seg.get("he_text") or seg.get("heText") or ""
-            en = seg.get("en_text") or seg.get("enText") or seg.get("text") or ""
-            parts.append(f"--- Segment [{seg_ref}] ---")
-            if he:
-                parts.append(f"Hebrew/Aramaic: {he}")
-            if en:
-                parts.append(f"English: {en}")
-    else:
-        parts.append("Please analyze the sugya for the given reference.")
-
-    return "\n".join(parts)
-
-
 def _canonical_key(ref: Optional[str]) -> Optional[str]:
-    """Normalizes Sefaria references to a uniform canonical key (e.g. 'Menachot 29b:2' -> 'Menachot.29b.2')."""
     if not ref:
         return None
     cleaned = ref.strip().replace(" ", ".").replace(":", ".")
@@ -473,11 +398,299 @@ def _canonical_key(ref: Optional[str]) -> Optional[str]:
     return cleaned
 
 
+# --- STEP 2: PARALLEL SEGMENT SPAN EXTRACTION (LLM) ---
+
+SPAN_EXTRACTION_PROMPT = """You are an expert Talmudic logic analyst.
+Analyze the given single Gemara segment (Hebrew and English).
+CRITICAL SEGMENTATION RULE (1 SEGMENT -> N SUB-SPANS):
+Paragraph boundaries in publishers (like Sefaria) are arbitrary layout choices. A SINGLE paragraph/segment frequently contains MULTIPLE logical steps or DIFFERENT OPINIONS of various Sages (e.g., Chachamim opinion -> Rabba opinion -> Rabban Shimon ben Gamliel opinion).
+Whenever the authority, speaker, rhetorical function, or opinion changes mid-paragraph, YOU MUST CREATE SEPARATE SUB-SPANS FOR EACH STEP/OPINION IN ORDER!
+
+For EACH sub-span:
+- "sub_index": 0-indexed integer order within this segment (0, 1, 2...)
+- "type": Exactly one of ["Statement", "Question", "Attack", "Defense", "Proof", "Answer"]
+- "start_quote": First 3-5 Hebrew words of this span in the original Hebrew text
+- "title_ru": Concise explanation in Russian (WHO holds WHAT position and WHY). Explicitly state names of Sages when present.
+- "speaker": Name of the Sage/Authority if explicitly mentioned (e.g., "Хахамим (Мудрецы)", "Раббан Шимон бен Гамлиэль"), or null if anonymous Gemara voice.
+
+FEW-SHOT BENCHMARK EXAMPLE 1:
+Input Ref: Gittin 2a:3
+Input Hebrew: וַחֲכָמִים אוֹמְרִים: אֵינוֹ צָרִיךְ שֶׁיֹּאמַר ״בְּפָנַי נִכְתַּב וּבְפָנַי נֶחְתַּם״, אֶלָּא הַמֵּבִיא מִמְּדִינַת הַיָּם וְהַמּוֹלִיךְ. וְהַמֵּבִיא מִמְּדִינָה לִמְדִינָה בִּמְדִינַת הַיָּם, צָרִיךְ שֶׁיֹּאמַר ״בְּפָנַי נִכְתַּב וּבְפָנַי נֶחְתַּם״. רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל אוֹמֵר: אֲפִילּוּ מֵהֶגְמוֹנְיָא לְהֶגְמוֹנְיָא.
+
+Output JSON:
+{
+  "spans": [
+    {
+      "sub_index": 0,
+      "type": "Statement",
+      "start_quote": "וַחֲכָמִים אוֹמְרִים אֵינוֹ צָרִיךְ",
+      "title_ru": "Мудрецы полагают: произносить формулу подтверждения нужно только при доставке из-за моря в Эрец-Исраэль и обратно.",
+      "speaker": "Мудрецы (Хахамим)"
+    },
+    {
+      "sub_index": 1,
+      "type": "Statement",
+      "start_quote": "וְהַמֵּבִיא מִמְּדִינָה לִמְדִינָה",
+      "title_ru": "Мудрецы добавляют: при перевозке гет между разными регионами за границей тоже требуется произносить формулу.",
+      "speaker": "Мудрецы (Хахамим)"
+    },
+    {
+      "sub_index": 2,
+      "type": "Statement",
+      "start_quote": "רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל",
+      "title_ru": "Раббан Шимон бен Гамлиэль считает: формулу нужно говорить даже при доставке из одного округа (гегмония) в другой.",
+      "speaker": "Раббан Шимон бен Гамлиэль"
+    }
+  ]
+}
+
+FEW-SHOT BENCHMARK EXAMPLE 2:
+Input Ref: Chullin 87a:3
+Input Hebrew: גְּמָ׳ תָּנוּ רַבָּנַן: ״וְשָׁפַךְ וְכִסָּה״ – מִי שֶׁשָּׁפַךְ יְכַסֶּה. שָׁחַט וְלֹא כִּסָּה, וְרָאָהוּ אַחֵר, מִנַּיִן שֶׁחַיָּיב לְכַסּוֹת? שֶׁנֶּאֱמַר: ״וָאֹמַר לִבְנֵי יִשְׂרָאֵל״ – אַזְהָרָה לְכׇל בְּנֵי יִשְׂרָאֵל.
+
+Output JSON:
+{
+  "spans": [
+    {
+      "sub_index": 0,
+      "type": "Statement",
+      "start_quote": "גְּמָ׳ תָּנוּ רַבָּנַן",
+      "title_ru": "Мудрецы учат в барайте: тот, кто пролил кровь при убое, должен ее покрыть.",
+      "speaker": "Мудрецы (Барайта)"
+    },
+    {
+      "sub_index": 1,
+      "type": "Question",
+      "start_quote": "שָׁחַט וְלֹא כִּסָּה",
+      "title_ru": "Гемара спрашивает: если резник не покрыл кровь и другой это увидел, откуда известно, что другой обязан покрыть?",
+      "speaker": null
+    },
+    {
+      "sub_index": 2,
+      "type": "Proof",
+      "start_quote": "שֶׁנֶּאֱמַר ״וָאֹמַר לִבְנֵי",
+      "title_ru": "Гемара доказывает из стиха 'Я сказал сынам Израиля': это предостережение для всех сынов Израиля.",
+      "speaker": null
+    }
+  ]
+}"""
+
+
+async def _extract_segment_spans(
+    llm_client: Any,
+    model: str,
+    reasoning_params: Dict[str, Any],
+    capabilities: List[str],
+    segment: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    seg_ref = segment.get("ref", "")
+    he_text = segment.get("he_text") or segment.get("heText") or ""
+    en_text = segment.get("en_text") or segment.get("enText") or segment.get("text") or ""
+
+    user_content = f"Segment Ref: {seg_ref}\nHebrew: {he_text}\nEnglish: {en_text}"
+
+    messages = [
+        {"role": "system", "content": SPAN_EXTRACTION_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+
+    req: Dict[str, Any] = {
+        **reasoning_params,
+        "model": model,
+        "messages": messages,
+        "stream": False,
+    }
+    if "json_mode" in capabilities:
+        req["response_format"] = {"type": "json_object"}
+
+    try:
+        completion = await llm_client.chat.completions.create(**req)
+        content = completion.choices[0].message.content if completion and completion.choices else ""
+        if content:
+            cleaned = content.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("\n", 1)[-1]
+                if cleaned.endswith("```"):
+                    cleaned = cleaned[:-3]
+                elif "```" in cleaned:
+                    cleaned = cleaned.rsplit("```", 1)[0]
+            parsed = _clean_and_parse_json(cleaned.strip())
+            spans = parsed.get("spans", [])
+            if isinstance(spans, list) and spans:
+                res = []
+                for s in spans:
+                    if isinstance(s, dict):
+                        res.append({
+                            "ref": seg_ref,
+                            "he_text": he_text,
+                            "sub_index": s.get("sub_index", 0),
+                            "type": s.get("type", "Statement"),
+                            "start_quote": s.get("start_quote", ""),
+                            "end_quote": s.get("end_quote", ""),
+                            "title_ru": s.get("title_ru") or s.get("title", ""),
+                            "speaker": s.get("speaker"),
+                        })
+                if res:
+                    # If LLM returned only 1 span but segment contains multiple opinion triggers, apply heuristic splitting
+                    if len(res) == 1 and he_text:
+                        clean_he_text = strip_nikud_and_punct(he_text)
+                        trigger_pattern = r"(וחכמים\s+אומרים|רבן\s+[^\s]+\s+אומר|רבי\s+[^\s]+\s+אומר|אמר\s+רב|ואמר\s+רב|והמביא\s+ממדינה)"
+                        matches = list(re.finditer(trigger_pattern, clean_he_text))
+                        if len(matches) > 1:
+                            split_spans = []
+                            for m_idx in range(len(matches)):
+                                start_p = matches[m_idx].start()
+                                end_p = matches[m_idx + 1].start() if m_idx + 1 < len(matches) else len(he_text)
+                                sub_str = he_text[start_p:end_p].strip()
+                                words = sub_str.split()
+                                if words:
+                                    s_q = " ".join(words[:min(4, len(words))])
+                                    e_q = " ".join(words[-min(4, len(words)):])
+                                    split_spans.append({
+                                        "ref": seg_ref,
+                                        "he_text": he_text,
+                                        "sub_index": m_idx,
+                                        "type": "Statement",
+                                        "start_quote": s_q,
+                                        "end_quote": e_q,
+                                        "title_ru": f"Мнение / Высказывание {m_idx + 1} в отрывке {seg_ref}",
+                                        "speaker": words[0] if words else None,
+                                    })
+                            if split_spans:
+                                return split_spans
+                    return res
+    except Exception as exc:
+        logger.warning(f"Span extraction failed for segment {seg_ref}: {exc}")
+
+    # Fallback if LLM call failed or returned empty: treat whole segment as 1 span
+    first_words = " ".join(he_text.split()[:4]) if he_text else ""
+    last_words = " ".join(he_text.split()[-4:]) if he_text else ""
+    return [{
+        "ref": seg_ref,
+        "he_text": he_text,
+        "sub_index": 0,
+        "type": "Statement",
+        "start_quote": first_words,
+        "end_quote": last_words,
+        "title_ru": f"Разбор отрывка {seg_ref}",
+        "speaker": None,
+    }]
+
+
+# --- STEP 4: TREE RELATIONS (LLM + FALLBACK) ---
+
+TREE_RELATIONS_PROMPT = """You are an expert Talmudic logical hierarchy builder.
+Given a list of extracted logical nodes in a sugya sequence, construct the tree structure by assigning parent_id and relation_label.
+
+Rules:
+1. The primary premise/statement node (first main thesis) has parent_id: null and relation_label: null.
+2. Every subsequent node MUST link to its logical parent node id (e.g., an Attack links to the Statement or Defense it challenges; a Defense links to the Attack it answers; a Proof links to the Statement it proves).
+3. "relation_label": short Russian description of the logical connection (e.g. "Возражение на тезис", "Ответ на вопрос", "Доказательство мнения").
+
+Return valid JSON matching this schema:
+{
+  "nodes_relations": [
+    { "id": "node_1", "parent_id": null, "relation_label": null },
+    { "id": "node_2", "parent_id": "node_1", "relation_label": "Возражение на тезис" }
+  ]
+}"""
+
+
+async def _build_tree_relations(
+    llm_client: Any,
+    model: str,
+    reasoning_params: Dict[str, Any],
+    capabilities: List[str],
+    raw_nodes: List[Dict[str, Any]],
+) -> Dict[str, Dict[str, Any]]:
+    """Calls LLM to populate parent_id and relation_label for nodes."""
+    if not raw_nodes:
+        return {}
+
+    compact_list = [
+        {"id": n["id"], "type": n["type"], "title": n["title_ru"], "ref": n["ref"]}
+        for n in raw_nodes
+    ]
+
+    user_content = f"Sugya Nodes Sequence ({len(compact_list)} nodes):\n" + json.dumps(compact_list, ensure_ascii=False, indent=2)
+
+    messages = [
+        {"role": "system", "content": TREE_RELATIONS_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+
+    req: Dict[str, Any] = {
+        **reasoning_params,
+        "model": model,
+        "messages": messages,
+        "stream": False,
+    }
+    if "json_mode" in capabilities:
+        req["response_format"] = {"type": "json_object"}
+
+    try:
+        completion = await llm_client.chat.completions.create(**req)
+        content = completion.choices[0].message.content if completion and completion.choices else ""
+        if content:
+            cleaned = content.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("\n", 1)[-1]
+                if cleaned.endswith("```"):
+                    cleaned = cleaned[:-3]
+                elif "```" in cleaned:
+                    cleaned = cleaned.rsplit("```", 1)[0]
+            parsed = _clean_and_parse_json(cleaned.strip())
+            relations = parsed.get("nodes_relations", [])
+            if isinstance(relations, list):
+                rel_map = {}
+                valid_ids = {n["id"] for n in raw_nodes}
+                for item in relations:
+                    if isinstance(item, dict) and "id" in item:
+                        n_id = item["id"]
+                        p_id = item.get("parent_id")
+                        # Prevent self-loop or invalid parent_id
+                        if p_id == n_id or p_id not in valid_ids:
+                            p_id = None
+                        rel_map[n_id] = {
+                            "parent_id": p_id,
+                            "relation_label": item.get("relation_label"),
+                        }
+                return rel_map
+    except Exception as exc:
+        logger.warning(f"Tree relations LLM call failed: {exc}. Using deterministic fallback.")
+
+    # --- DETERMINISTIC FALLBACK FOR STEP 4 ---
+    rel_map = {}
+    for i, n in enumerate(raw_nodes):
+        if i == 0:
+            rel_map[n["id"]] = {"parent_id": None, "relation_label": None}
+        else:
+            # Connect to nearest preceding Statement / Question / Attack
+            parent = None
+            for j in range(i - 1, -1, -1):
+                prev = raw_nodes[j]
+                if prev["type"] in ["Statement", "Question", "Attack"]:
+                    parent = prev["id"]
+                    break
+            if not parent:
+                parent = raw_nodes[0]["id"]
+            rel_map[n["id"]] = {
+                "parent_id": parent,
+                "relation_label": f"Связь с {parent}",
+            }
+    return rel_map
+
+
 @router.post("/calculate-map", response_model=SugyaMapResponse)
 @router.post("/calculate-map/", response_model=SugyaMapResponse)
 async def calculate_sugya_map(payload: SugyaMapRequest):
     """
-    Analyzes Talmudic sugya text and generates logical hierarchy (Sugya Mind Map).
+    Analyzes Talmudic sugya text with 5-stage architecture:
+    1. Paragraph split
+    2. Parallel span extraction (asyncio.gather)
+    3. Fuzzy matching with nikud stripping
+    4. Graph parent_id building with fallbacks
+    5. Cache & return
     """
     if not payload.ref and not payload.segments:
         raise HTTPException(status_code=400, detail="Either 'ref' or 'segments' must be provided.")
@@ -497,9 +710,10 @@ async def calculate_sugya_map(payload: SugyaMapRequest):
                 async with async_session_factory() as session:
                     result = await session.execute(select(SugyaMapCache).where(SugyaMapCache.ref == cache_key))
                     db_obj = result.scalar_one_or_none()
-                    if db_obj:
+                    if db_obj and db_obj.nodes:
                         cached_data = {
                             "sugya_title": db_obj.sugya_title,
+                            "version": 2,
                             "mishnah_summary": db_obj.mishnah_summary,
                             "markdown_tree": db_obj.markdown_tree,
                             "nodes": db_obj.nodes,
@@ -525,117 +739,147 @@ async def calculate_sugya_map(payload: SugyaMapRequest):
     if payload.model and payload.model.strip():
         model = payload.model.strip()
 
-    user_prompt = await _build_user_prompt(payload.ref, payload.segments)
+    # Step 1: Context building & Paragraph filtering
+    full_context_segments = await _ensure_full_cross_page_context(payload.ref, payload.segments or [])
+    target_segments = _filter_segments_by_paragraph_symbol(payload.ref, full_context_segments) if full_context_segments else []
+    if not target_segments:
+        target_segments = payload.segments or []
 
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": user_prompt},
+    if not target_segments:
+        raise HTTPException(status_code=400, detail="No Talmud segments found to analyze.")
+
+    # Step 2: Parallel span extraction for all target segments via asyncio.gather(...)
+    tasks = [
+        _extract_segment_spans(llm_client, model, reasoning_params, capabilities, seg)
+        for seg in target_segments
     ]
+    extracted_segment_spans = await asyncio.gather(*tasks)
 
-    req: Dict[str, Any] = {
-        **reasoning_params,
-        "model": model,
-        "messages": messages,
-        "stream": False,
-    }
-    if "json_mode" in capabilities:
-        req["response_format"] = {"type": "json_object"}
+    # Flatten extracted spans into chronological raw nodes
+    raw_nodes: List[Dict[str, Any]] = []
+    node_counter = 1
+    for seg_spans in extracted_segment_spans:
+        for span in seg_spans:
+            raw_nodes.append({
+                "id": f"node_{node_counter}",
+                "ref": span["ref"],
+                "he_text": span["he_text"],
+                "sub_index": span["sub_index"],
+                "type": span["type"],
+                "start_quote": span["start_quote"],
+                "end_quote": span["end_quote"],
+                "title_ru": span["title_ru"],
+                "speaker": span["speaker"],
+            })
+            node_counter += 1
 
-    try:
-        completion = await llm_client.chat.completions.create(**req)
-    except Exception as exc:
-        logger.error("LLM call failed for Sugya Map calculation", extra={"error": str(exc)}, exc_info=True)
-        raise HTTPException(status_code=502, detail=f"LLM completion failed: {exc}")
+    # Step 3: Continuous Sliding Window Processing per Segment
+    processed_nodes: List[Dict[str, Any]] = []
 
-    content = completion.choices[0].message.content if completion and completion.choices else ""
-    if not content:
-        raise HTTPException(status_code=502, detail="Empty response from LLM")
+    from collections import defaultdict
+    spans_by_ref = defaultdict(list)
+    for node_data in raw_nodes:
+        spans_by_ref[node_data["ref"]].append(node_data)
 
-    # Clean markdown json codeblock wrappers if present
-    cleaned = content.strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.split("\n", 1)[-1]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
-        elif "```" in cleaned:
-            cleaned = cleaned.rsplit("```", 1)[0]
-    cleaned = cleaned.strip()
+    for seg_ref, seg_spans in spans_by_ref.items():
+        he_text = seg_spans[0]["he_text"] if seg_spans else ""
+        continuous_spans = process_segment_spans_continuous(he_text, seg_spans)
+        processed_nodes.extend(continuous_spans)
 
-    try:
-        data = _clean_and_parse_json(cleaned)
-    except Exception as exc:
-        logger.error(f"Failed to parse LLM response as JSON: {cleaned[:200]}...", exc_info=True)
-        raise HTTPException(status_code=502, detail="LLM response was not valid JSON")
+    # Reassign sequential node IDs (node_1, node_2...)
+    for idx, node_data in enumerate(processed_nodes, start=1):
+        node_data["id"] = f"node_{idx}"
 
-    try:
-        response_obj = SugyaMapResponse(**data)
-        data_dict = response_obj.model_dump()
+    # Step 4: Tree Relations (parent_id & relation_label)
+    rel_map = await _build_tree_relations(
+        llm_client, model, reasoning_params, capabilities, processed_nodes
+    )
 
-        # Collect all refs in the sugya (from focus ref and all nodes in the tree)
-        refs_to_cache = set()
-        if cache_key:
-            refs_to_cache.add(cache_key)
-        for node in response_obj.nodes:
-            if node.ref:
-                c_node_key = _canonical_key(node.ref)
-                if c_node_key:
-                    refs_to_cache.add(c_node_key)
+    # Construct final SugyaNode Pydantic objects & Markdown tree
+    final_nodes: List[SugyaNode] = []
+    markdown_lines = []
+    sugya_title = payload.ref or "Карта Сугии Талмуда"
 
-        for r_key in refs_to_cache:
-            SUGYA_MAP_CACHE[r_key] = data_dict
+    if processed_nodes and processed_nodes[0].get("title_ru"):
+        sugya_title = f"Сугия: {processed_nodes[0]['title_ru']}"
 
-        _save_disk_cache()
+    for node_data in processed_nodes:
+        n_id = node_data["id"]
+        rel = rel_map.get(n_id, {})
+        parent_id = rel.get("parent_id")
+        relation_label = rel.get("relation_label")
 
-        # Save to PostgreSQL DB for all refs in the sugya
-        if async_session_factory and SugyaMapCache and pg_insert:
-            try:
-                async with async_session_factory() as session:
-                    for r_key in refs_to_cache:
-                        stmt = pg_insert(SugyaMapCache).values(
-                            ref=r_key,
-                            sugya_title=response_obj.sugya_title,
-                            mishnah_summary=response_obj.mishnah_summary,
-                            markdown_tree=response_obj.markdown_tree,
-                            nodes=[n.model_dump() for n in response_obj.nodes],
-                        ).on_conflict_do_update(
-                            index_elements=["ref"],
-                            set_={
-                                "sugya_title": response_obj.sugya_title,
-                                "mishnah_summary": response_obj.mishnah_summary,
-                                "markdown_tree": response_obj.markdown_tree,
-                                "nodes": [n.model_dump() for n in response_obj.nodes],
-                            }
-                        )
-                        await session.execute(stmt)
-                    await session.commit()
-                    logger.info(f"Persisted sugya map to PostgreSQL DB for {len(refs_to_cache)} refs: {list(refs_to_cache)}")
-            except Exception as db_err:
-                logger.warning(f"Failed to persist sugya map to PostgreSQL: {db_err}")
-
-        return response_obj
-    except Exception as exc:
-        logger.error(f"SugyaMapResponse validation error: {exc}", exc_info=True)
-        # Fallback formatting if dict missing required keys
-        nodes = []
-        raw_nodes = data.get("nodes", [])
-        if isinstance(raw_nodes, list):
-            for i, n in enumerate(raw_nodes):
-                if isinstance(n, dict):
-                    nodes.append(SugyaNode(
-                        id=str(n.get("id", f"node_{i+1}")),
-                        level=int(n.get("level", 1)),
-                        type=str(n.get("type", "Statement")),
-                        title=str(n.get("title", f"Node {i+1}")),
-                        ref=n.get("ref"),
-                        start_anchor=n.get("start_anchor"),
-                        end_anchor=n.get("end_anchor"),
-                    ))
-
-        fallback_obj = SugyaMapResponse(
-            sugya_title=data.get("sugya_title") or payload.ref or "Сугия",
-            markdown_tree=data.get("markdown_tree") or "",
-            nodes=nodes,
+        s_node = SugyaNode(
+            id=n_id,
+            level=1 if not parent_id else 2,
+            type=node_data["type"],
+            title=node_data["title_ru"],
+            ref=node_data["ref"],
+            sub_index=node_data["sub_index"],
+            speaker=node_data.get("speaker"),
+            parent_id=parent_id,
+            relation_label=relation_label,
+            start_quote=node_data.get("start_quote"),
+            end_quote=node_data.get("end_quote"),
+            start_anchor=node_data.get("start_anchor"),
+            end_anchor=node_data.get("end_anchor"),
+            start_word_idx=node_data.get("start_word_idx"),
+            end_word_idx=node_data.get("end_word_idx"),
         )
-        if cache_key:
-            SUGYA_MAP_CACHE[cache_key] = fallback_obj.model_dump()
-        return fallback_obj
+        final_nodes.append(s_node)
+
+        indent = "  " if parent_id else ""
+        spk_str = f" [{s_node.speaker}]" if s_node.speaker else ""
+        rel_str = f" ({relation_label})" if relation_label else ""
+        markdown_lines.append(f"{indent}- **[{s_node.type}]**{spk_str} {s_node.title}{rel_str}")
+
+    response_obj = SugyaMapResponse(
+        sugya_title=sugya_title,
+        version=2,
+        mishnah_summary=None,
+        markdown_tree="\n".join(markdown_lines),
+        nodes=final_nodes,
+    )
+    data_dict = response_obj.model_dump()
+
+    # Step 5: Save Cache to Memory, Disk and PostgreSQL DB
+    refs_to_cache = set()
+    if cache_key:
+        refs_to_cache.add(cache_key)
+    for node in response_obj.nodes:
+        if node.ref:
+            c_node_key = _canonical_key(node.ref)
+            if c_node_key:
+                refs_to_cache.add(c_node_key)
+
+    for r_key in refs_to_cache:
+        SUGYA_MAP_CACHE[r_key] = data_dict
+
+    _save_disk_cache()
+
+    if async_session_factory and SugyaMapCache and pg_insert:
+        try:
+            async with async_session_factory() as session:
+                for r_key in refs_to_cache:
+                    stmt = pg_insert(SugyaMapCache).values(
+                        ref=r_key,
+                        sugya_title=response_obj.sugya_title,
+                        mishnah_summary=None,
+                        markdown_tree=response_obj.markdown_tree,
+                        nodes=[n.model_dump() for n in response_obj.nodes],
+                    ).on_conflict_do_update(
+                        index_elements=["ref"],
+                        set_={
+                            "sugya_title": response_obj.sugya_title,
+                            "mishnah_summary": None,
+                            "markdown_tree": response_obj.markdown_tree,
+                            "nodes": [n.model_dump() for n in response_obj.nodes],
+                        }
+                    )
+                    await session.execute(stmt)
+                await session.commit()
+                logger.info(f"Persisted sugya map v2 to PostgreSQL DB for {len(refs_to_cache)} refs.")
+        except Exception as db_err:
+            logger.warning(f"Failed to persist sugya map to PostgreSQL: {db_err}")
+
+    return response_obj

@@ -278,6 +278,11 @@ class SederMapService:
                         end_word_idx=item.get("end_word_idx"),
                         text_he=item.get("text_he"),
                         text_ru=item.get("text_ru"),
+                        speaker=item.get("speaker"),
+                        parent_id=item.get("parent_id"),
+                        relation_label=item.get("relation_label"),
+                        start_quote=item.get("start_quote"),
+                        end_quote=item.get("end_quote"),
                         status_he=item.get("status_he"),
                         status_ru=item.get("status_ru"),
                     )
@@ -304,7 +309,7 @@ class SederMapService:
                 if expected_version is None or segment.version != int(expected_version):
                     raise ValueError("version_conflict")
 
-                for f in ["source_ref", "sub_index", "role", "start_anchor", "end_anchor", "start_word_idx", "end_word_idx"]:
+                for f in ["source_ref", "sub_index", "role", "start_anchor", "end_anchor", "start_word_idx", "end_word_idx", "speaker", "parent_id", "relation_label", "start_quote", "end_quote"]:
                     if f in payload:
                         setattr(segment, f, payload[f])
 
@@ -580,6 +585,11 @@ class SederMapService:
             "end_word_idx": segment.end_word_idx,
             "text_he": segment.text_he,
             "text_ru": segment.text_ru,
+            "speaker": segment.speaker,
+            "parent_id": segment.parent_id,
+            "relation_label": segment.relation_label,
+            "start_quote": segment.start_quote,
+            "end_quote": segment.end_quote,
             "status_he": segment.status_he,
             "status_ru": segment.status_ru,
             "version": segment.version,
