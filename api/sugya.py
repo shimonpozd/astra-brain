@@ -79,26 +79,32 @@ def process_segment_spans_continuous(he_text: str, spans: List[Dict[str, Any]]) 
     clean_he = strip_nikud_and_punct(he_text)
     last_found_idx = 0
 
-    # 1. Находим стартовые позиции всех спанов
+    # 1. Находим стартовые позиции всех валидных спанов
+    valid_spans: List[Dict[str, Any]] = []
     for i, span in enumerate(spans):
-        start_quote = span.get("start_quote", "")
+        start_quote = span.get("start_quote", "") or span.get("start_anchor", "")
         clean_start = strip_nikud_and_punct(start_quote)
-        
+
         start_char_idx = -1
-        if clean_start:
+        if clean_start and len(clean_start) >= 2:
             # Ищем строго ПОСЛЕ предыдущего найденного спана
             start_char_idx = clean_he.find(clean_start, last_found_idx)
             if start_char_idx == -1:
-                # Fallback по первому слову цитаты
-                start_words = clean_start.split()
+                # Fallback по первому слову цитаты (длиной >= 2)
+                start_words = [w for w in clean_start.split() if len(w) >= 2]
                 if start_words:
                     start_char_idx = clean_he.find(start_words[0], last_found_idx)
 
         if start_char_idx != -1:
-            last_found_idx = start_char_idx
-            span["_start_char"] = start_char_idx
-        else:
-            span["_start_char"] = last_found_idx if i > 0 else 0
+            if len(valid_spans) == 0 or (start_char_idx - last_found_idx >= 3):
+                last_found_idx = start_char_idx
+                span["_start_char"] = start_char_idx
+                valid_spans.append(span)
+
+    if not valid_spans:
+        return spans
+
+    spans = valid_spans
 
     # 2. Формируем непрерывные отрезки (Sliding Window)
     processed = []
