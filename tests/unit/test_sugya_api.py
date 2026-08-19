@@ -7,26 +7,20 @@ from brain_service.main import app
 client = TestClient(app)
 
 MOCK_LLM_RESPONSE = {
-    "sugya_title": "Разбор правила Мишны",
-    "markdown_tree": "# Statement\n## Question\n### Attack",
-    "nodes": [
+    "spans": [
         {
-            "id": "node_1",
-            "level": 1,
+            "sub_index": 0,
             "type": "Statement",
-            "title": "Тезис Мишны",
-            "ref": "Chullin 89b:9",
-            "start_anchor": "מאימתי",
-            "end_anchor": "עד שיכלה"
+            "start_quote": "מאימתי קורין את שמע",
+            "title_ru": "Разбор правила Мишны",
+            "speaker": "Мудрецы"
         },
         {
-            "id": "node_2",
-            "level": 2,
+            "sub_index": 1,
             "type": "Question",
-            "title": "Вопрос Гмары",
-            "ref": "Chullin 89b:10",
-            "start_anchor": "מנא הני מילי",
-            "end_anchor": "דאמר קרא"
+            "start_quote": "עד שיכלה",
+            "title_ru": "Вопрос Гмары",
+            "speaker": None
         }
     ]
 }

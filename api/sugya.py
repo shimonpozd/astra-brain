@@ -407,77 +407,23 @@ def _canonical_key(ref: Optional[str]) -> Optional[str]:
 # --- STEP 2: PARALLEL SEGMENT SPAN EXTRACTION (LLM) ---
 
 SPAN_EXTRACTION_PROMPT = """You are an expert Talmudic logic analyst.
-Analyze the given single Gemara segment (Hebrew and English).
-CRITICAL SEGMENTATION RULE (1 SEGMENT -> N SUB-SPANS):
-Paragraph boundaries in publishers (like Sefaria) are arbitrary layout choices. A SINGLE paragraph/segment frequently contains MULTIPLE logical steps or DIFFERENT OPINIONS of various Sages (e.g., Chachamim opinion -> Rabba opinion -> Rabban Shimon ben Gamliel opinion).
-Whenever the authority, speaker, rhetorical function, or opinion changes mid-paragraph, YOU MUST CREATE SEPARATE SUB-SPANS FOR EACH STEP/OPINION IN ORDER!
+Analyze the given single Gemara segment. Create sub-spans whenever authority, speaker, rhetorical function, or opinion changes mid-paragraph.
 
-For EACH sub-span:
-- "sub_index": 0-indexed integer order within this segment (0, 1, 2...)
+For EACH sub-span in chronological order:
+- "sub_index": 0-indexed integer order within segment (0, 1, 2...)
 - "type": Exactly one of ["Statement", "Question", "Attack", "Defense", "Proof", "Answer"]
-- "start_quote": First 3-5 Hebrew words of this span in the original Hebrew text
-- "title_ru": Concise explanation in Russian (WHO holds WHAT position and WHY). Explicitly state names of Sages when present.
-- "speaker": Name of the Sage/Authority if explicitly mentioned (e.g., "Хахамим (Мудрецы)", "Раббан Шимон бен Гамлиэль"), or null if anonymous Gemara voice.
+- "start_quote": First 3-5 Hebrew words of this span in original text
+- "title_ru": Concise explanation in Russian (WHO holds WHAT position and WHY, specifying Sages if mentioned)
+- "speaker": Name of Sage/Authority if mentioned, or null if anonymous voice.
 
-FEW-SHOT BENCHMARK EXAMPLE 1:
-Input Ref: Gittin 2a:3
-Input Hebrew: וַחֲכָמִים אוֹמְרִים: אֵינוֹ צָרִיךְ שֶׁיֹּאמַר ״בְּפָנַי נִכְתַּב וּבְפָנַי נֶחְתַּם״, אֶלָּא הַמֵּבִיא מִמְּדִינַת הַיָּם וְהַמּוֹלִיךְ. וְהַמֵּבִיא מִמְּדִינָה לִמְדִינָה בִּמְדִינַת הַיָּם, צָרִיךְ שֶׁיֹּאמַר ״בְּפָנַי נִכְתַּב וּבְפָנַי נֶחְתַּם״. רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל אוֹמֵר: אֲפִילּוּ מֵהֶגְמוֹנְיָא לְהֶגְמוֹנְיָא.
-
+FEW-SHOT EXAMPLE:
+Input: Gittin 2a:3
+Hebrew: וַחֲכָמִים אוֹמְרִים: אֵינוֹ צָרִיךְ... רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל אוֹמֵר...
 Output JSON:
 {
   "spans": [
-    {
-      "sub_index": 0,
-      "type": "Statement",
-      "start_quote": "וַחֲכָמִים אוֹמְרִים אֵינוֹ צָרִיךְ",
-      "title_ru": "Мудрецы полагают: произносить формулу подтверждения нужно только при доставке из-за моря в Эрец-Исраэль и обратно.",
-      "speaker": "Мудрецы (Хахамим)"
-    },
-    {
-      "sub_index": 1,
-      "type": "Statement",
-      "start_quote": "וְהַמֵּבִיא מִמְּדִינָה לִמְדִינָה",
-      "title_ru": "Мудрецы добавляют: при перевозке гет между разными регионами за границей тоже требуется произносить формулу.",
-      "speaker": "Мудрецы (Хахамим)"
-    },
-    {
-      "sub_index": 2,
-      "type": "Statement",
-      "start_quote": "רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל",
-      "title_ru": "Раббан Шимон бен Гамлиэль считает: формулу нужно говорить даже при доставке из одного округа (гегмония) в другой.",
-      "speaker": "Раббан Шимон бен Гамлиэль"
-    }
-  ]
-}
-
-FEW-SHOT BENCHMARK EXAMPLE 2:
-Input Ref: Chullin 87a:3
-Input Hebrew: גְּמָ׳ תָּנוּ רַבָּנַן: ״וְשָׁפַךְ וְכִסָּה״ – מִי שֶׁשָּׁפַךְ יְכַסֶּה. שָׁחַט וְלֹא כִּסָּה, וְרָאָהוּ אַחֵר, מִנַּיִן שֶׁחַיָּיב לְכַסּוֹת? שֶׁנֶּאֱמַר: ״וָאֹמַר לִבְנֵי יִשְׂרָאֵל״ – אַזְהָרָה לְכׇל בְּנֵי יִשְׂרָאֵל.
-
-Output JSON:
-{
-  "spans": [
-    {
-      "sub_index": 0,
-      "type": "Statement",
-      "start_quote": "גְּמָ׳ תָּנוּ רַבָּנַן",
-      "title_ru": "Мудрецы учат в барайте: тот, кто пролил кровь при убое, должен ее покрыть.",
-      "speaker": "Мудрецы (Барайта)"
-    },
-    {
-      "sub_index": 1,
-      "type": "Question",
-      "start_quote": "שָׁחַט וְלֹא כִּסָּה",
-      "title_ru": "Гемара спрашивает: если резник не покрыл кровь и другой это увидел, откуда известно, что другой обязан покрыть?",
-      "speaker": null
-    },
-    {
-      "sub_index": 2,
-      "type": "Proof",
-      "start_quote": "שֶׁנֶּאֱמַר ״וָאֹמַר לִבְנֵי",
-      "title_ru": "Гемара доказывает из стиха 'Я сказал сынам Израиля': это предостережение для всех сынов Израиля.",
-      "speaker": null
-    }
+    {"sub_index": 0, "type": "Statement", "start_quote": "וַחֲכָמִים אוֹמְרִים אֵינוֹ צָרִיךְ", "title_ru": "Мудрецы: формула нужна только при перевозке из-за моря.", "speaker": "Мудрецы (Хахамим)"},
+    {"sub_index": 1, "type": "Statement", "start_quote": "רַבָּן שִׁמְעוֹן בֶּן גַּמְלִיאֵל", "title_ru": "Раббан Шимон бен Гамлиэль: формула нужна даже при перевозке между округами.", "speaker": "Раббан Шимон бен Гамлиэль"}
   ]
 }"""
 
