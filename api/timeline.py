@@ -207,10 +207,11 @@ async def get_timeline_people(
         elif isinstance(img, dict) and img.get("url"):
           images_list.append(str(img.get("url")))
 
-    categories_list = categories if isinstance(categories, list) else None
-
     summary_raw = p.get("summary_html") or p.get("summary_author_html") or facts.get("summary_author_html") or author_facts.get("summary_author_html")
     summary_snippet = str(summary_raw)[:400] if summary_raw else None
+    categories_list = categories if isinstance(categories, list) else None
+
+    is_star_val = bool(author_facts.get("is_star") or facts.get("is_star") or p.get("is_star"))
 
     person = TimelinePerson(
       slug=slug,
@@ -227,6 +228,7 @@ async def get_timeline_people(
       categories=categories_list,
       images=images_list or None,
       is_verified=p.get("is_verified"),
+      is_star=is_star_val if is_star_val else None,
     )
 
     # Populate crude birth/death years when possible
