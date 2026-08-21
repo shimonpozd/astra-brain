@@ -209,6 +209,9 @@ async def get_timeline_people(
 
     categories_list = categories if isinstance(categories, list) else None
 
+    summary_raw = p.get("summary_html") or p.get("summary_author_html") or facts.get("summary_author_html") or author_facts.get("summary_author_html")
+    summary_snippet = str(summary_raw)[:400] if summary_raw else None
+
     person = TimelinePerson(
       slug=slug,
       name_en=p.get("title_en") or display.get("name_en") or slug,
@@ -220,7 +223,7 @@ async def get_timeline_people(
       subPeriod=sub_period_val,
       generation=generation_val,
       region=region_val,
-      summary_html=None,  # тяжелый HTML не нужен для таймлайна
+      summary_html=summary_snippet,
       categories=categories_list,
       images=images_list or None,
       is_verified=p.get("is_verified"),
